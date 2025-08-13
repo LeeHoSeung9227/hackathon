@@ -1,175 +1,213 @@
-# 쓰레기 분리 포인트 시스템 (React Frontend)
+# 쓰레기 분리 포인트 시스템 - Spring Boot Backend
 
-환경 보호를 위한 쓰레기 분리 포인트 시스템의 React 프론트엔드입니다.
+환경 보호를 위한 쓰레기 분리 포인트 시스템의 **Spring Boot 백엔드 API**입니다.
 
-## 🚀 주요 기능
+## 🚀 **프로젝트 개요**
 
-### 📱 메인 대시보드 (Main)
-- 사용자 정보 및 포인트 현황
-- 멤버십 등급 표시 (BRONZE, SILVER, GOLD, PLATINUM)
-- 최근 활동 기록 (최근 3개)
-- 뉴스 및 알림
-- 빠른 액션 버튼
+현재는 백엔드 초기세팅팅
 
-### 📷 AI 카메라 인식 (Camera)
-- 쓰레기 종류별 포인트 시스템
-- 실시간 인식 시뮬레이션
-- 성공/실패 결과 표시
-- 쓰레기 분리 팁 제공
+## 🛠️ **기술 스택**
 
-### 🏆 랭킹 시스템 (Ranking)
-- 개인/단과대/캠퍼스별 랭킹
-- 실시간 순위 업데이트
-- 랭킹별 보상 시스템
-- 랭킹 올리는 팁
-
-### 👤 마이페이지 (MyPage)
-- 상세 프로필 정보
-- 뱃지 현황 (획득/미획득)
-- 포인트 교환 내역
-- 계정 설정 옵션
-- 활동 통계 요약
-
-### 📊 활동 기록 (History)
-- 주간/월간/캘린더 뷰
-- 상세 활동 기록
-- 환경 기여도 측정
-- 목표 달성률 표시
-
-## 🛠️ 기술 스택
-
-### Frontend
-- **React 18.2.0** - 사용자 인터페이스 라이브러리
-- **React Router DOM 6.3.0** - 클라이언트 사이드 라우팅
-- **Axios 1.3.4** - HTTP 클라이언트
-- **CSS3** - 스타일링 및 반응형 디자인
-
-### Backend
-- **Spring Boot 3.2.0** - 백엔드 프레임워크
+### **Backend Framework**
+- **Spring Boot 3.2.0** - 메인 백엔드 프레임워크
 - **Java 17** - 프로그래밍 언어
+- **Gradle 8.5** - 빌드 도구
+
+### **Database & ORM**
+- **H2 Database 2.2.224** - 인메모리 데이터베이스
 - **Spring Data JPA** - 데이터 영속성
-- **H2 Database** - 인메모리 데이터베이스
-- **Spring Security** - 인증 및 권한 관리
+- **Hibernate** - JPA 구현체
 
-## 📁 프로젝트 구조
+### **Security & Authentication**
+- **Spring Security 6.2.0** - 인증 및 권한 관리
+- **JWT (JSON Web Token)** - 사용자 인증
+
+### **API & Communication**
+- **Spring Web** - REST API 컨트롤러
+- **Spring Boot DevTools** - 개발 도구
+- **CORS 설정** - 프론트엔드 통신 허용
+
+## 📁 **프로젝트 구조**
 
 ```
-HACKATHON/
-├── package.json                 # React 프로젝트 설정
-├── public/
-│   └── index.html              # HTML 템플릿
-├── src/
-│   ├── components/             # 재사용 가능한 컴포넌트
-│   │   └── Navbar.js          # 네비게이션 바
-│   ├── pages/                  # 페이지 컴포넌트
-│   │   ├── Home.js            # 홈페이지
-│   │   ├── Login.js           # 로그인/회원가입
-│   │   ├── Main.js            # 메인 대시보드
-│   │   ├── Camera.js          # 카메라 인식
-│   │   ├── Ranking.js         # 랭킹 시스템
-│   │   ├── MyPage.js          # 마이페이지
-│   │   └── History.js         # 활동 기록
-│   ├── App.js                  # 메인 앱 컴포넌트
-│   ├── App.css                 # 앱 스타일
-│   ├── index.js                # 앱 진입점
-│   └── index.css               # 전역 스타일
-└── src/main/java/com/hackathon/  # Spring Boot 백엔드
-    ├── controller/             # REST API 컨트롤러
-    ├── service/                # 비즈니스 로직
-    ├── repository/             # 데이터 접근 계층
-    ├── entity/                 # JPA 엔티티
-    └── dto/                    # 데이터 전송 객체
+src/main/java/com/hackathon/
+├── HackathonApplication.java          # 메인 애플리케이션 클래스
+├── config/
+│   └── SecurityConfig.java           # Spring Security 설정
+├── controller/                        # REST API 엔드포인트
+│   ├── AuthController.java           # 인증 관련 API
+│   ├── CameraController.java         # 카메라 인식 API
+│   ├── MainController.java           # 메인 대시보드 API
+│   ├── OrderController.java          # 주문/교환 API
+│   ├── ProductController.java        # 상품 관리 API
+│   ├── RankingController.java        # 랭킹 시스템 API
+│   └── UserController.java           # 사용자 관리 API
+├── service/                          # 비즈니스 로직 계층
+│   ├── OrderService.java             # 주문 서비스
+│   ├── ProductService.java           # 상품 서비스
+│   ├── RankingService.java           # 랭킹 서비스
+│   ├── UserService.java              # 사용자 서비스
+│   └── WasteRecordService.java       # 쓰레기 기록 서비스
+├── repository/                       # 데이터 접근 계층
+│   ├── OrderRepository.java          # 주문 데이터 접근
+│   ├── ProductRepository.java        # 상품 데이터 접근
+│   ├── UserRepository.java           # 사용자 데이터 접근
+│   └── WasteRecordRepository.java    # 쓰레기 기록 데이터 접근
+├── entity/                           # JPA 엔티티
+│   ├── Badge.java                   # 뱃지 엔티티
+│   ├── News.java                     # 뉴스 엔티티
+│   ├── Order.java                    # 주문 엔티티
+│   ├── OrderItem.java                # 주문 아이템 엔티티
+│   ├── Product.java                  # 상품 엔티티
+│   ├── User.java                     # 사용자 엔티티
+│   ├── UserBadge.java                # 사용자 뱃지 엔티티
+│   └── WasteRecord.java              # 쓰레기 기록 엔티티
+├── dto/                              # 데이터 전송 객체
+│   ├── OrderDto.java                 # 주문 DTO
+│   ├── ProductDto.java               # 상품 DTO
+│   ├── RankingDto.java               # 랭킹 DTO
+│   ├── UserDto.java                  # 사용자 DTO
+│   └── WasteRecordDto.java           # 쓰레기 기록 DTO
+└── exception/
+    └── GlobalExceptionHandler.java    # 전역 예외 처리
 ```
 
-## 🚀 실행 방법
+## 🗄️ **데이터베이스 스키마**
 
-### 1. 백엔드 실행
+
+### **초기 데이터**
+- `data.sql`에 샘플 사용자, 상품, 쓰레기 기록 데이터 포함
+- 애플리케이션 시작 시 자동으로 데이터베이스에 로드
+
+## 🔌 **REST API 엔드포인트**
+
+### **인증 API** (`/api/auth`)
+- `POST /api/auth/login` - 사용자 로그인
+- `POST /api/auth/register` - 사용자 회원가입
+
+### **메인 대시보드 API** (`/api/main`)
+- `GET /api/main/dashboard/{userId}` - 사용자 대시보드 정보
+
+### **사용자 관리 API** (`/api/users`)
+- `GET /api/users/{id}` - 사용자 정보 조회
+- `PUT /api/users/{id}` - 사용자 정보 수정
+- `GET /api/users/{id}/points` - 포인트 조회
+
+### **쓰레기 기록 API** (`/api/waste-records`)
+- `POST /api/waste-records` - 쓰레기 분리 기록 생성
+- `GET /api/waste-records/user/{userId}` - 사용자별 기록 조회
+
+### **랭킹 시스템 API** (`/api/ranking`)
+- `GET /api/ranking/individual` - 개인 랭킹
+- `GET /api/ranking/college` - 단과대별 랭킹
+- `GET /api/ranking/campus` - 캠퍼스별 랭킹
+
+### **상품/주문 API** (`/api/products`, `/api/orders`)
+- `GET /api/products` - 상품 목록 조회
+- `POST /api/orders` - 주문 생성
+- `GET /api/orders/user/{userId}` - 사용자별 주문 내역
+
+## 🚀 **실행 방법**
+
+### **1. 사전 요구사항**
+- **Java 17** 이상 설치
+- **Gradle** (프로젝트에 Gradle Wrapper 포함)
+
+### **2. 프로젝트 클론**
 ```bash
-# Spring Boot 애플리케이션 실행
+git clone https://github.com/LeeHoSeung9227/hackathon.git
+cd hackathon
+```
+
+### **3. 백엔드 실행**
+```bash
+# Windows
 gradlew.bat bootRun
-```
-백엔드는 `http://localhost:8080`에서 실행됩니다.
 
-### 2. 프론트엔드 실행
-```bash
-# 의존성 설치
-npm install
-
-# 개발 서버 실행
-npm start
-```
-프론트엔드는 `http://localhost:3000`에서 실행됩니다.
-
-### 3. 빌드
-```bash
-# 프로덕션 빌드
-npm run build
+# Linux/Mac
+./gradlew bootRun
 ```
 
-## 🔑 테스트 계정
+### **4. 접속 확인**
+- **애플리케이션**: http://localhost:8080
+- **H2 콘솔**: http://localhost:8080/h2-console
+  - JDBC URL: `jdbc:h2:mem:testdb`
+  - Username: `sa`
+  - Password: (비어있음)
 
-| 사용자명 | 닉네임 | 비밀번호 | 포인트 | 등급 | 랭킹 |
-|---------|--------|----------|--------|------|------|
-| user1   | 설호   | password | 750    | SILVER | 2위 |
-| user2   | 김지수 | password | 500    | SILVER | 3위 |
-| user3   | 이가은 | password | 300    | BRONZE | 4위 |
-| user4   | 이호승 | password | 200    | BRONZE | 5위 |
-| user5   | 안예영 | password | 100    | BRONZE | 6위 |
+## 🔧 **설정 파일**
 
-## 🌟 주요 특징
+### **application.yml**
+```yaml
+server:
+  port: 8080
 
-### 🎨 사용자 경험
-- **반응형 디자인**: 모바일과 데스크톱 모두 지원
-- **직관적 인터페이스**: 사용하기 쉬운 UI/UX
-- **실시간 업데이트**: 포인트와 랭킹 실시간 반영
-- **시각적 피드백**: 이모지와 색상으로 정보 전달
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  sql:
+    init:
+      mode: always
+      data-locations: classpath:data.sql
+```
 
-### 🔒 보안 기능
-- **Spring Security**: 백엔드 API 보안
-- **JWT 토큰**: 사용자 인증 (구현 예정)
-- **CORS 설정**: 프론트엔드-백엔드 통신 허용
+### **build.gradle**
+- Spring Boot 3.2.0
+- Spring Security, JPA, H2, Lombok 등 의존성 포함
 
-### 📊 데이터 관리
-- **H2 인메모리 DB**: 빠른 개발 및 테스트
-- **JPA 엔티티**: 객체-관계 매핑
-- **데이터 초기화**: 샘플 데이터 자동 로드
+## 🧪 **테스트 데이터**
 
-## 🔮 향후 개발 계획
+### **초기 사용자**
+| ID | 사용자명 | 닉네임 | 포인트 | 등급 | 랭킹 |
+|----|----------|--------|--------|------|------|
+| 1  | admin    | 관리자 | 1000   | GOLD | 1위  |
+| 2  | user1    | 설호   | 750    | SILVER | 2위 |
+| 3  | user2    | 김지수 | 500    | SILVER | 3위 |
+| 4  | user3    | 이가은 | 300    | BRONZE | 4위 |
+| 5  | user4    | 이호승 | 200    | BRONZE | 5위 |
 
-### 단기 계획
-- [ ] JWT 인증 시스템 구현
-- [ ] 실시간 채팅 기능
-- [ ] 푸시 알림 시스템
-- [ ] 이미지 업로드 기능
+## 🔒 **보안 설정**
 
-### 중기 계획
-- [ ] PWA (Progressive Web App) 지원
-- [ ] 오프라인 모드
-- [ ] 다국어 지원
-- [ ] 테마 커스터마이징
+### **CORS 설정**
+```java
+@CrossOrigin(origins = "*")
+```
+- 모든 도메인에서 API 접근 허용
+- 개발 환경용 설정
 
-### 장기 계획
-- [ ] AI 쓰레기 인식 모델 연동
-- [ ] 블록체인 기반 포인트 시스템
-- [ ] IoT 디바이스 연동
-- [ ] 글로벌 서비스 확장
+### **Spring Security**
+- 기본 인증 및 권한 관리
+- JWT 토큰 기반 인증 (구현 예정)
 
-## 🤝 기여 방법
+## 📊 **API 응답 예시**
 
-1. 이 저장소를 포크합니다
-2. 기능 브랜치를 생성합니다 (`git checkout -b feature/AmazingFeature`)
-3. 변경사항을 커밋합니다 (`git commit -m 'Add some AmazingFeature'`)
-4. 브랜치에 푸시합니다 (`git push origin feature/AmazingFeature`)
-5. Pull Request를 생성합니다
 
-## 📄 라이선스
+## 🚀 **개발 환경 설정**
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+### **IDE 설정**
+- **IntelliJ IDEA** 또는 **Eclipse** 권장
+- **Spring Boot DevTools** 활성화로 자동 재시작
+- **H2 Database** 콘솔 접근 가능
 
-## 📞 문의
+### **디버깅**
+- `application.yml`에서 `show-sql: true`로 SQL 쿼리 로그 확인
+- H2 콘솔에서 데이터베이스 상태 실시간 모니터링
 
-프로젝트에 대한 문의사항이 있으시면 이슈를 생성해주세요.
-
----
-
-**환경을 지키고 포인트를 모으세요! 🌱♻️**
+## 🔮 **향후 개발 계획**
