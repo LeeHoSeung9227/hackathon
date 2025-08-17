@@ -98,6 +98,45 @@ src/main/java/com/hackathon/
 - `GET /api/waste-records/user/{userId}` - 사용자별 기록 조회
 
 ### **랭킹 시스템 API** (`/api/ranking`)
+
+## 🐳 **Docker 배포**
+
+### **로컬 빌드 및 테스트**
+```bash
+# JAR 파일 빌드
+./gradlew clean bootJar
+
+# Docker 이미지 빌드
+docker build -t hackathon-backend .
+
+# 로컬에서 실행
+docker run -p 8080:8080 hackathon-backend
+```
+
+### **AWS ECR 배포**
+1. **GitHub Secrets 설정**
+   - `AWS_ACCOUNT_ID`: AWS 계정 ID
+   - `AWS_ACCESS_KEY_ID`: ECR 푸시 권한이 있는 액세스 키
+   - `AWS_SECRET_ACCESS_KEY`: 시크릿 액세스 키
+   - `EC2_HOST`: EC2 인스턴스 퍼블릭 IP 또는 호스트명
+   - `EC2_SSH_KEY`: EC2 프라이빗 키 원문 전체
+
+2. **자동 배포**
+   - `main` 브랜치에 푸시하면 자동으로 ECR에 이미지가 푸시되고 EC2에 배포됩니다
+   - GitHub Actions 워크플로우: `.github/workflows/deploy-docker.yml`
+
+3. **EC2 환경 설정**
+   - EC2에 Docker와 Docker Compose 설치 필요
+   - `/opt/app/` 디렉토리에 `docker-compose.yml`과 `.env` 파일 배치
+   - `.env` 파일 예시:
+     ```bash
+     ECR_REGISTRY=your-account-id.dkr.ecr.ap-northeast-2.amazonaws.com
+     SPRING_PROFILES_ACTIVE=prod
+     ```
+
+### **헬스 체크**
+- 헬스 엔드포인트: `http://localhost:8080/actuator/health`
+- 정보 엔드포인트: `http://localhost:8080/actuator/info`
 - `GET /api/ranking/individual` - 개인 랭킹
 - `GET /api/ranking/college` - 단과대별 랭킹
 - `GET /api/ranking/campus` - 캠퍼스별 랭킹

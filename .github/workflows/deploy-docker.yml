@@ -1,0 +1,71 @@
+name: Deploy Backend (Docker/ECR -> EC2)
+on:
+  push:
+    branches: [ "main" ]
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPO: my-api
+  ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-northeast-2.amazonaws.com
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+  EC2_USER: ubuntu
+  EC2_APP_DIR: /opt/app
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+
+      - run: ./gradlew clean bootJar
+
+      - name: Prepare app.jar
+        run: |
+          JAR=$(ls build/libs/*.jar | head -n1)
+          cp "$JAR" app.jar
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Ensure ECR exists & Login
+        run: |
+          aws ecr describe-repositories --repository-names $ECR_REPO || \
+          aws ecr create-repository --repository-name $ECR_REPO
+          aws ecr get-login-password | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+      - name: Build & Push image
+        run: |
+          docker build -t $ECR_REPO:latest .
+          docker tag  $ECR_REPO:latest $ECR_REGISTRY/$ECR_REPO:latest
+          docker tag  $ECR_REPO:latest $ECR_REGISTRY/$ECR_REPO:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_REPO:latest
+          docker push $ECR_REGISTRY/$ECR_REPO:${{ github.sha }}
+
+  deploy:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    steps:
+      - name: SSH deploy (compose pull & up)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ env.EC2_HOST }}
+          username: ${{ env.EC2_USER }}
+          key:      ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo apt-get update && sudo apt-get install -y docker-compose-plugin awscli || true
+            [ -f $EC2_APP_DIR/docker-compose.yml ] || (echo "missing compose file"; exit 1)
+            [ -f $EC2_APP_DIR/.env ]              || (echo "missing env file";     exit 1)
+
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} \
+              | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
+
+            docker compose -f $EC2_APP_DIR/docker-compose.yml pull
+            docker compose -f $EC2_APP_DIR/docker-compose.yml up -d
+            docker ps
