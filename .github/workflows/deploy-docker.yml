@@ -30,11 +30,13 @@ jobs:
           ls -la
           find . -maxdepth 3 -type f -name "gradlew" -o -name "gradle-wrapper.jar" -o -name "build.gradle*" -o -name "Dockerfile"
 
-      - name: Set gradlew permissions
-        run: chmod +x gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.5'
 
       - name: Build JAR
-        run: ./gradlew clean bootJar
+        run: gradle clean bootJar
 
       - name: Prepare app.jar
         run: |
