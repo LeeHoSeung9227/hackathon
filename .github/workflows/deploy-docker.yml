@@ -21,6 +21,9 @@ jobs:
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
 
+      - name: Set gradlew permissions
+        run: chmod +x gradlew
+
       - run: ./gradlew clean bootJar
 
       - name: Prepare app.jar
