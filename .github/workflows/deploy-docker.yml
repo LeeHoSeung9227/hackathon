@@ -8,7 +8,7 @@ env:
   AWS_REGION: eu-north-1
   ECR_REPO: my-api
   ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-north-1.amazonaws.com
   EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_USER: ec2-user
   EC2_APP_DIR: /opt/app
