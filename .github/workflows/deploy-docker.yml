@@ -24,11 +24,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set gradlew permissions
-        run: chmod +x gradlew
+      - name: Setup Gradle (no wrapper fallback)
+        uses: gradle/actions/setup-gradle@v3
 
-      - name: Build JAR
-        run: ./gradlew clean bootJar
+      - name: Build JAR (no wrapper)
+        run: gradle clean bootJar
 
       - name: Prepare app.jar
         run: |
