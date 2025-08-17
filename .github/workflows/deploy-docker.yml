@@ -2,6 +2,7 @@ name: Deploy Backend (Docker/ECR -> EC2)
 on:
   push:
     branches: ["main"]
+  workflow_dispatch: {}
 
 env:
   AWS_REGION: eu-north-1
@@ -45,7 +46,7 @@ jobs:
         run: |
           aws ecr describe-repositories --repository-names "$ECR_REPO" --region "$AWS_REGION" || \
           aws ecr create-repository --repository-name "$ECR_REPO" --region "$AWS_REGION"
-          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+          aws ecr get-login-password --region "${AWS_REGION}" | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
 
       - name: Build & Push image
         run: |
@@ -66,12 +67,11 @@ jobs:
           username: ${{ env.EC2_USER }}
           key:      ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 전제: EC2에 docker/compose 이미 설치 완료
             [ -f "$EC2_APP_DIR/docker-compose.yml" ] || (echo "missing compose file"; exit 1)
             [ -f "$EC2_APP_DIR/.env" ]              || (echo "missing env file";     exit 1)
 
-            aws ecr get-login-password --region "${AWS_REGION}" \
-              | docker login --username AWS --password-stdin "${ECR_REGISTRY}"
+            aws ecr get-login-password --region "${{ env.AWS_REGION }}" \
+              | docker login --username AWS --password-stdin "${{ env.ECR_REGISTRY }}"
 
             docker compose -f "$EC2_APP_DIR/docker-compose.yml" pull
             docker compose -f "$EC2_APP_DIR/docker-compose.yml" up -d
