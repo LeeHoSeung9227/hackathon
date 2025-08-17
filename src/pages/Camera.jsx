@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 
 function Camera() {
-  const [selectedWasteType, setSelectedWasteType] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [user] = useState({
     nickname: '김지수',
     points: 500
   });
+  
+  const fileInputRef = useRef(null);
 
   const wasteTypes = [
     { type: 'PET', icon: '🥤', points: 10, description: '플라스틱 병' },
@@ -18,9 +21,30 @@ function Camera() {
     { type: 'PLASTIC', icon: '🔄', points: 8, description: '일반 플라스틱' }
   ];
 
+  // 이미지 선택 처리
+  const handleImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedImage(file);
+      
+      // 이미지 미리보기 생성
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 카메라 버튼 클릭
+  const handleCameraClick = () => {
+    fileInputRef.current.click();
+  };
+
+  // TACO 모델로 쓰레기 탐지
   const handleWasteRecognition = async () => {
-    if (!selectedWasteType) {
-      alert('쓰레기 종류를 선택해주세요!');
+    if (!selectedImage) {
+      alert('이미지를 선택해주세요!');
       return;
     }
 
@@ -28,35 +52,76 @@ function Camera() {
     setResult(null);
 
     try {
-      // 실제 API 호출 시뮬레이션
-      const response = await axios.post('/api/camera/recognize', {
-        wasteType: selectedWasteType,
-        userId: 2
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('image', selectedImage);
+
+      // TACO 모델 API 호출
+      const response = await axios.post('/api/taco/detect', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
 
-      // 성공 결과 시뮬레이션
-      const selectedWaste = wasteTypes.find(w => w.type === selectedWasteType);
-      const success = Math.random() > 0.2; // 80% 성공률
+      const apiResult = response.data;
 
-      if (success) {
-        setResult({
-          success: true,
-          wasteType: selectedWasteType,
-          earnedPoints: selectedWaste.points,
-          message: '오늘 북극곰 한 마리를 구했습니다! 🐻‍❄️',
-          newTotalPoints: user.points + selectedWaste.points
-        });
+      if (apiResult.success) {
+        // 탐지 성공
+        const detectedCount = apiResult.detections || 0;
+        const wasteTypes = apiResult.wasteTypes || [];
+        const confidence = apiResult.confidence || [];
+        
+        if (detectedCount > 0) {
+          // 쓰레기 탐지됨
+          const avgConfidence = confidence.reduce((a, b) => a + b, 0) / confidence.length;
+          const earnedPoints = Math.floor(avgConfidence * 20); // 신뢰도에 따른 점수
+          
+          setResult({
+            success: true,
+            wasteType: `쓰레기 ${detectedCount}개`,
+            earnedPoints: earnedPoints,
+            message: `TACO 모델이 ${detectedCount}개의 쓰레기를 탐지했습니다! 🎉`,
+            newTotalPoints: user.points + earnedPoints,
+            details: {
+              count: detectedCount,
+              types: wasteTypes,
+              confidence: confidence
+            }
+          });
+        } else {
+          // 쓰레기 탐지 안됨
+          setResult({
+            success: false,
+            message: '이미지에서 쓰레기를 탐지할 수 없습니다. 다른 이미지를 시도해보세요.',
+            details: {
+              count: 0,
+              types: [],
+              confidence: []
+            }
+          });
+        }
       } else {
+        // API 오류
         setResult({
           success: false,
-          message: '쓰레기 분리가 올바르지 않습니다. 다시 시도해주세요.',
-          wasteType: selectedWasteType
+          message: apiResult.message || '모델 실행 중 오류가 발생했습니다.',
+          details: {
+            count: 0,
+            types: [],
+            confidence: []
+          }
         });
       }
     } catch (error) {
+      console.error('API 호출 오류:', error);
       setResult({
         success: false,
-        message: '인식 중 오류가 발생했습니다. 다시 시도해주세요.'
+        message: '서버 연결 오류가 발생했습니다. 다시 시도해주세요.',
+        details: {
+          count: 0,
+          types: [],
+          confidence: []
+        }
       });
     } finally {
       setIsProcessing(false);
@@ -65,7 +130,11 @@ function Camera() {
 
   const resetResult = () => {
     setResult(null);
-    setSelectedWasteType('');
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -80,69 +149,81 @@ function Camera() {
         </div>
       </div>
 
-      {/* 카메라 시뮬레이션 */}
+      {/* 카메라/이미지 업로드 */}
       <div className="card">
-        <h3>카메라 화면</h3>
+        <h3>📷 이미지 업로드</h3>
+        
+        {/* 이미지 미리보기 */}
         <div style={{ 
           width: '100%', 
           height: '300px', 
-          backgroundColor: '#000', 
+          backgroundColor: '#f8f9fa', 
           borderRadius: '10px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: 'white',
-          fontSize: '2rem',
-          marginBottom: '20px'
+          marginBottom: '20px',
+          border: '2px dashed #dee2e6',
+          overflow: 'hidden'
         }}>
-          {isProcessing ? '🔍 인식 중...' : '📷 카메라 준비됨'}
+          {imagePreview ? (
+            <img 
+              src={imagePreview} 
+              alt="업로드된 이미지" 
+              style={{ 
+                maxWidth: '100%', 
+                maxHeight: '100%', 
+                objectFit: 'contain' 
+              }} 
+            />
+          ) : (
+            <div style={{ textAlign: 'center', color: '#6c757d' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📷</div>
+              <div>이미지를 선택하거나 촬영하세요</div>
+            </div>
+          )}
         </div>
 
-        {/* 쓰레기 종류 선택 */}
-        <h4>쓰레기 종류 선택:</h4>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
-          gap: '10px',
-          marginBottom: '20px'
-        }}>
-          {wasteTypes.map((waste) => (
-            <button
-              key={waste.type}
-              onClick={() => setSelectedWasteType(waste.type)}
-              style={{
-                padding: '15px',
-                border: selectedWasteType === waste.type ? '3px solid #007bff' : '1px solid #ddd',
-                borderRadius: '10px',
-                backgroundColor: selectedWasteType === waste.type ? '#e3f2fd' : 'white',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <div style={{ fontSize: '2rem', marginBottom: '5px' }}>{waste.icon}</div>
-              <div style={{ fontWeight: 'bold' }}>{waste.type}</div>
-              <div style={{ fontSize: '0.8rem', color: '#666' }}>{waste.description}</div>
-              <div style={{ fontSize: '0.9rem', color: 'green', fontWeight: 'bold' }}>
-                +{waste.points}점
-              </div>
-            </button>
-          ))}
+        {/* 파일 입력 (숨김) */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageSelect}
+          style={{ display: 'none' }}
+        />
+
+        {/* 카메라/업로드 버튼 */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
+          <button
+            onClick={handleCameraClick}
+            className="btn btn-primary"
+            style={{ flex: 1 }}
+          >
+            📷 이미지 선택
+          </button>
         </div>
 
+        {/* TACO 모델 실행 버튼 */}
         <button
           onClick={handleWasteRecognition}
-          disabled={!selectedWasteType || isProcessing}
-          className="btn btn-primary"
-          style={{ width: '100%', fontSize: '1.2rem', padding: '15px' }}
+          disabled={!selectedImage || isProcessing}
+          className="btn btn-success"
+          style={{ 
+            width: '100%', 
+            fontSize: '1.2rem', 
+            padding: '15px',
+            backgroundColor: isProcessing ? '#6c757d' : '#28a745'
+          }}
         >
-          {isProcessing ? '인식 중...' : '쓰레기 인식하기'}
+          {isProcessing ? '🔍 TACO 모델 분석 중...' : '🤖 AI 쓰레기 탐지하기'}
         </button>
       </div>
 
       {/* 결과 표시 */}
       {result && (
         <div className="card">
-          <h3>인식 결과</h3>
+          <h3>🤖 AI 탐지 결과</h3>
           <div style={{
             padding: '20px',
             backgroundColor: result.success ? '#d4edda' : '#f8d7da',
@@ -153,9 +234,9 @@ function Camera() {
             {result.success ? (
               <>
                 <div style={{ fontSize: '4rem', marginBottom: '15px' }}>🎉</div>
-                <h4 style={{ color: '#155724', marginBottom: '10px' }}>인식 성공!</h4>
+                <h4 style={{ color: '#155724', marginBottom: '10px' }}>AI 탐지 성공!</h4>
                 <p style={{ color: '#155724', marginBottom: '15px' }}>
-                  <strong>{result.wasteType}</strong> 쓰레기로 인식되었습니다.
+                  <strong>{result.wasteType}</strong>로 인식되었습니다.
                 </p>
                 <div style={{ 
                   fontSize: '2rem', 
@@ -171,16 +252,38 @@ function Camera() {
                 <p style={{ color: '#155724' }}>
                   총 포인트: <strong>{result.newTotalPoints.toLocaleString()}점</strong>
                 </p>
+                
+                {/* 상세 정보 */}
+                {result.details && result.details.count > 0 && (
+                  <div style={{ 
+                    marginTop: '15px', 
+                    padding: '15px', 
+                    backgroundColor: 'rgba(255,255,255,0.5)', 
+                    borderRadius: '8px' 
+                  }}>
+                    <h5>🔍 탐지 상세 정보</h5>
+                    <p>탐지된 객체 수: <strong>{result.details.count}개</strong></p>
+                    <p>평균 신뢰도: <strong>{(result.details.confidence.reduce((a, b) => a + b, 0) / result.details.confidence.length * 100).toFixed(1)}%</strong></p>
+                  </div>
+                )}
               </>
             ) : (
               <>
                 <div style={{ fontSize: '4rem', marginBottom: '15px' }}>❌</div>
-                <h4 style={{ color: '#721c24', marginBottom: '10px' }}>인식 실패</h4>
+                <h4 style={{ color: '#721c24', marginBottom: '10px' }}>탐지 실패</h4>
                 <p style={{ color: '#721c24' }}>{result.message}</p>
-                {result.wasteType && (
-                  <p style={{ color: '#721c24' }}>
-                    선택된 종류: <strong>{result.wasteType}</strong>
-                  </p>
+                
+                {/* 상세 정보 */}
+                {result.details && (
+                  <div style={{ 
+                    marginTop: '15px', 
+                    padding: '15px', 
+                    backgroundColor: 'rgba(255,255,255,0.5)', 
+                    borderRadius: '8px' 
+                  }}>
+                    <h5>🔍 분석 결과</h5>
+                    <p>탐지된 객체 수: <strong>{result.details.count}개</strong></p>
+                  </div>
                 )}
               </>
             )}
@@ -198,19 +301,19 @@ function Camera() {
 
       {/* 사용 팁 */}
       <div className="card">
-        <h3>💡 쓰레기 분리 팁</h3>
+        <h3>💡 AI 쓰레기 탐지 팁</h3>
         <div style={{ display: 'grid', gap: '10px' }}>
           <div style={{ padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
-            <strong>🥤 PET:</strong> 내용물을 깨끗이 비우고 라벨을 제거하세요
+            <strong>📷 이미지 품질:</strong> 밝고 선명한 이미지를 사용하세요
           </div>
           <div style={{ padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
-            <strong>🥫 CAN:</strong> 내용물을 완전히 비우고 압축하세요
+            <strong>🔍 쓰레기 위치:</strong> 쓰레기가 이미지 중앙에 오도록 촬영하세요
           </div>
           <div style={{ padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
-            <strong>📄 PAPER:</strong> 오염되지 않은 종이만 분리하세요
+            <strong>💡 조명:</strong> 그림자가 생기지 않도록 균등한 조명을 사용하세요
           </div>
           <div style={{ padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
-            <strong>🥃 GLASS:</strong> 깨진 유리는 별도로 처리하세요
+            <strong>🎯 배경:</strong> 복잡한 배경보다는 단순한 배경에서 촬영하세요
           </div>
         </div>
       </div>
