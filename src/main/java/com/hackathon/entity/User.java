@@ -1,17 +1,16 @@
 package com.hackathon.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
-@Data
 public class User implements UserDetails {
     
     @Id
@@ -21,11 +20,17 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String username;
     
-    @Column(unique = true, nullable = false)
-    private String email;
+    @Column(nullable = true)
+    private String pw;
     
-    @Column(nullable = false)
-    private String password;
+    @Column(name = "pw_hash", nullable = false)
+    private String pwHash;
+    
+    @Column(name = "pw_salt")
+    private String pwSalt;
+    
+    @Column(name = "password_algo", length = 50)
+    private String passwordAlgo;
     
     @Column(nullable = false)
     private String nickname;
@@ -34,29 +39,49 @@ public class User implements UserDetails {
     private String campus;
     
     @Column(nullable = false)
-    private String college;
+    private String level;
     
-    @Column(nullable = false)
-    private Integer points = 0;
+    @Column(name = "points_total")
+    private Integer pointsTotal = 0;
     
-    @Column(nullable = false)
-    private String membershipLevel = "BRONZE";
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
     
-    @Column(nullable = false)
-    private Integer rank = 0;
+    @Column(columnDefinition = "varchar default 'active'")
+    private String status = "active";
     
-    @Column(nullable = false)
-    private String role = "USER";
+    @Column(columnDefinition = "varchar default 'user'")
+    private String role = "user";
     
+    // 기존 필드들 (호환성을 위해 유지)
+    @Column(unique = true)
+    private String email;
+    
+    @Column(name = "phone_number")
     private String phoneNumber;
+    
     private String address;
     
+    @Column(name = "membership_level")
+    private String membershipLevel = "BRONZE";
+    
+    private Integer rank = 0;
+    
+    // Getter/Setter 메서드들
+    public Long getId() {
+        return id;
+    }
+    
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
     public Integer getPoints() {
-        return points;
+        return pointsTotal;
     }
     
     public void setPoints(Integer points) {
-        this.points = points;
+        this.pointsTotal = points;
     }
     
     public String getPhoneNumber() {
@@ -91,14 +116,6 @@ public class User implements UserDetails {
         this.campus = campus;
     }
     
-    public String getCollege() {
-        return college;
-    }
-    
-    public void setCollege(String college) {
-        this.college = college;
-    }
-    
     public String getMembershipLevel() {
         return membershipLevel;
     }
@@ -123,9 +140,45 @@ public class User implements UserDetails {
         this.role = role;
     }
     
+    // 누락된 메서드들 추가
+    public void setPassword(String password) {
+        this.pwHash = password;
+    }
+    
+    public String getCollege() {
+        return this.campus; // campus를 college로 매핑
+    }
+    
+    public void setCollege(String college) {
+        this.campus = college; // college를 campus로 매핑
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    // Spring Security UserDetails 구현
+    @Override
+    public String getUsername() {
+        return username;
+    }
+    
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
+    }
+    
+    @Override
+    public String getPassword() {
+        return pwHash;
     }
     
     @Override
@@ -135,7 +188,7 @@ public class User implements UserDetails {
     
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return "active".equals(status);
     }
     
     @Override
@@ -145,6 +198,6 @@ public class User implements UserDetails {
     
     @Override
     public boolean isEnabled() {
-        return true;
+        return "active".equals(status);
     }
 }

@@ -27,124 +27,190 @@
 - **Spring Boot DevTools** - 개발 도구
 - **CORS 설정** - 프론트엔드 통신 허용
 
-## 📁 **프로젝트 구조**
+## 📁 **프로젝트 구조 (통합된 버전)**
 
 ```
 src/main/java/com/hackathon/
 ├── HackathonApplication.java          # 메인 애플리케이션 클래스
 ├── config/
-│   └── SecurityConfig.java           # Spring Security 설정
-├── controller/                        # REST API 엔드포인트
-│   ├── AuthController.java           # 인증 관련 API
-│   ├── CameraController.java         # 카메라 인식 API
-│   ├── MainController.java           # 메인 대시보드 API
-│   ├── OrderController.java          # 주문/교환 API
-│   ├── ProductController.java        # 상품 관리 API
-│   ├── RankingController.java        # 랭킹 시스템 API
-│   └── UserController.java           # 사용자 관리 API
+│   ├── SecurityConfig.java           # Spring Security 설정
+│   └── CorsConfig.java              # CORS 설정
+├── controller/                        # REST API 엔드포인트 (8개)
+│   ├── AuthController.java           # 인증 + 회원가입 통합
+│   ├── UserController.java           # 사용자 + 랭킹 통합
+│   ├── PointController.java          # 포인트 + 교환 내역 통합
+│   ├── AiController.java             # AI 분석 + 이미지 통합
+│   ├── ProductController.java        # 상품 + 주문 통합
+│   ├── ActivityController.java       # 활동 + 일간/주간 통합
+│   ├── BadgeController.java          # 뱃지 시스템
+│   ├── CameraController.java         # 카메라 인식
+│   ├── MainController.java           # 메인 대시보드
+│   └── HomeController.java           # 홈/헬스체크
 ├── service/                          # 비즈니스 로직 계층
-│   ├── OrderService.java             # 주문 서비스
-│   ├── ProductService.java           # 상품 서비스
-│   ├── RankingService.java           # 랭킹 서비스
 │   ├── UserService.java              # 사용자 서비스
-│   └── WasteRecordService.java       # 쓰레기 기록 서비스
+│   ├── RankingService.java           # 랭킹 서비스
+│   ├── PointHistoryService.java      # 포인트 내역 서비스
+│   ├── ExchangeHistoryService.java   # 교환 내역 서비스
+│   ├── AiResultService.java          # AI 결과 서비스
+│   ├── ImageService.java             # 이미지 서비스
+│   ├── ProductService.java           # 상품 서비스
+│   ├── OrderService.java             # 주문 서비스
+│   ├── ActivityHistoryService.java   # 활동 기록 서비스
+│   ├── BadgeService.java             # 뱃지 서비스
+│   ├── WasteRecordService.java       # 쓰레기 기록 서비스
+│   ├── AuthLoginService.java         # 인증 서비스
+│   ├── SignupRequestService.java     # 가입 신청 서비스
+│   └── TacoModelService.java        # TACO 모델 서비스
 ├── repository/                       # 데이터 접근 계층
-│   ├── OrderRepository.java          # 주문 데이터 접근
-│   ├── ProductRepository.java        # 상품 데이터 접근
 │   ├── UserRepository.java           # 사용자 데이터 접근
-│   └── WasteRecordRepository.java    # 쓰레기 기록 데이터 접근
-├── entity/                           # JPA 엔티티
-│   ├── Badge.java                   # 뱃지 엔티티
-│   ├── News.java                     # 뉴스 엔티티
-│   ├── Order.java                    # 주문 엔티티
-│   ├── OrderItem.java                # 주문 아이템 엔티티
-│   ├── Product.java                  # 상품 엔티티
+│   ├── RankingRepository.java        # 랭킹 데이터 접근
+│   ├── PointHistoryRepository.java   # 포인트 내역 데이터 접근
+│   ├── ExchangeHistoryRepository.java # 교환 내역 데이터 접근
+│   ├── AiResultRepository.java       # AI 결과 데이터 접근
+│   ├── ImageRepository.java          # 이미지 데이터 접근
+│   ├── ProductRepository.java        # 상품 데이터 접근
+│   ├── OrderRepository.java          # 주문 데이터 접근
+│   ├── ActivityHistoryRepository.java # 활동 기록 데이터 접근
+│   ├── BadgeRepository.java          # 뱃지 데이터 접근
+│   ├── WasteRecordRepository.java    # 쓰레기 기록 데이터 접근
+│   ├── AuthLoginRepository.java      # 인증 데이터 접근
+│   └── SignupRequestRepository.java  # 가입 신청 데이터 접근
+├── entity/                           # JPA 엔티티 (12개)
 │   ├── User.java                     # 사용자 엔티티
-│   ├── UserBadge.java                # 사용자 뱃지 엔티티
-│   └── WasteRecord.java              # 쓰레기 기록 엔티티
-├── dto/                              # 데이터 전송 객체
-│   ├── OrderDto.java                 # 주문 DTO
-│   ├── ProductDto.java               # 상품 DTO
-│   ├── RankingDto.java               # 랭킹 DTO
+│   ├── WasteRecord.java              # 쓰레기 기록 엔티티
+│   ├── Product.java                  # 상품 엔티티
+│   ├── Order.java                    # 주문 엔티티
+│   ├── Badge.java                    # 뱃지 엔티티
+│   ├── Ranking.java                  # 랭킹 엔티티
+│   ├── PointHistory.java             # 포인트 내역 엔티티
+│   ├── ExchangeHistory.java          # 교환 내역 엔티티
+│   ├── ActivityHistory.java          # 활동 기록 엔티티
+│   ├── Image.java                    # 이미지 엔티티
+│   ├── AiResult.java                 # AI 결과 엔티티
+│   └── AuthLogin.java                # 인증 엔티티
+├── dto/                              # 데이터 전송 객체 (8개)
 │   ├── UserDto.java                  # 사용자 DTO
-│   └── WasteRecordDto.java           # 쓰레기 기록 DTO
+│   ├── WasteRecordDto.java           # 쓰레기 기록 DTO
+│   ├── ProductDto.java               # 상품 DTO
+│   ├── OrderDto.java                 # 주문 DTO
+│   ├── BadgeDto.java                 # 뱃지 DTO
+│   ├── RankingDto.java               # 랭킹 DTO
+│   ├── PointHistoryDto.java          # 포인트 내역 DTO
+│   └── ActivityHistoryDto.java       # 활동 기록 DTO
 └── exception/
     └── GlobalExceptionHandler.java    # 전역 예외 처리
 ```
 
-## 🗄️ **데이터베이스 스키마**
+## 🎯 **Controller 통합 결과**
 
+### **기존: 15개 Controller**
+- `AuthController`, `SignupController` → **`AuthController`** (통합)
+- `UserController`, `RankingController` → **`UserController`** (통합)
+- `PointController`, `ExchangeController` → **`PointController`** (통합)
+- `AiController`, `ImageController` → **`AiController`** (통합)
+- `ProductController`, `OrderController` → **`ProductController`** (통합)
+- `ActivityController` + Daily/Weekly → **`ActivityController`** (통합)
+- **`BadgeController`** (신규 생성)
 
-### **초기 데이터**
-- `data.sql`에 샘플 사용자, 상품, 쓰레기 기록 데이터 포함
-- 애플리케이션 시작 시 자동으로 데이터베이스에 로드
+### **최종: 8개 Controller**
+1. **`AuthController`** - 인증 + 회원가입
+2. **`UserController`** - 사용자 + 랭킹
+3. **`PointController`** - 포인트 + 교환
+4. **`AiController`** - AI + 이미지
+5. **`ProductController`** - 상품 + 주문
+6. **`ActivityController`** - 활동 + 통계
+7. **`BadgeController`** - 뱃지 시스템
+8. **`CameraController`** - 카메라 인식
 
 ## 🔌 **REST API 엔드포인트**
 
 ### **인증 API** (`/api/auth`)
 - `POST /api/auth/login` - 사용자 로그인
-- `POST /api/auth/register` - 사용자 회원가입
+- `POST /api/auth/logout` - 사용자 로그아웃
+- `GET /api/auth/session/{token}` - 세션 상태 확인
+- `POST /api/auth/signup/request` - 회원가입 신청
+- `GET /api/auth/signup/status/{username}` - 가입 신청 상태
+- `POST /api/auth/signup/verify/{id}` - 가입 신청 인증
+- `GET /api/auth/signup/all` - 모든 가입 신청 (관리자)
+
+### **사용자 관리 API** (`/api/users`)
+- `GET /api/users` - 전체 사용자 조회
+- `GET /api/users/{id}` - 사용자 정보 조회
+- `POST /api/users` - 사용자 생성
+- `PUT /api/users/{id}` - 사용자 정보 수정
+- `DELETE /api/users/{id}` - 사용자 삭제
+- `GET /api/users/{id}/rankings` - 사용자 랭킹 조회
+- `GET /api/users/{id}/rankings/scope/{scopeType}` - 범위별 랭킹
+- `GET /api/users/{id}/ranking-summary` - 랭킹 요약
+
+### **포인트/교환 API** (`/api/points`)
+- `GET /api/points/user/{userId}` - 사용자 포인트 내역
+- `GET /api/points/image/{imagesId}` - 이미지별 포인트 내역
+- `GET /api/points/user/{userId}/type/{changeType}` - 타입별 포인트 내역
+- `GET /api/points/user/{userId}/range` - 날짜별 포인트 내역
+- `GET /api/points/user/{userId}/exchanges` - 사용자 교환 내역
+- `GET /api/points/exchanges/product/{productId}` - 상품별 교환 내역
+- `GET /api/points/user/{userId}/exchanges/product/{productId}` - 사용자별 상품별 교환
+- `GET /api/points/user/{userId}/exchanges/range` - 날짜별 교환 내역
+
+### **AI/이미지 API** (`/api/ai`)
+- `GET /api/ai/image/{imagesId}` - 이미지별 AI 분석 결과
+- `GET /api/ai/user/{userId}` - 사용자별 AI 분석 결과
+- `GET /api/ai/material/{materialType}` - 재질별 AI 분석 결과
+- `GET /api/ai/status/{isApproved}` - 승인 상태별 AI 분석 결과
+- `GET /api/ai/range` - 날짜별 AI 분석 결과
+- `GET /api/ai/images/user/{userId}` - 사용자 이미지 목록
+- `GET /api/ai/images/status/{status}` - 상태별 이미지 조회
+- `GET /api/ai/images/user/{userId}/status/{status}` - 사용자별 상태별 이미지
+- `GET /api/ai/images/range` - 날짜별 이미지 조회
+- `GET /api/ai/images/{imageId}` - 이미지 상세 정보
+
+### **상품/주문 API** (`/api/products`)
+- `GET /api/products` - 전체 상품 조회
+- `GET /api/products/{id}` - 상품 ID로 조회
+- `POST /api/products` - 상품 생성
+- `PUT /api/products/{id}` - 상품 정보 수정
+- `DELETE /api/products/{id}` - 상품 삭제
+- `GET /api/products/orders` - 전체 주문 조회
+- `GET /api/products/orders/{id}` - 주문 ID로 조회
+- `POST /api/products/orders` - 주문 생성
+- `PUT /api/products/orders/{id}/status` - 주문 상태 수정
+- `DELETE /api/products/orders/{id}` - 주문 삭제
+
+### **활동 기록 API** (`/api/activity`)
+- `GET /api/activity/user/{userId}` - 사용자 활동 기록
+- `GET /api/activity/user/{userId}/date/{date}` - 특정 날짜 활동
+- `GET /api/activity/user/{userId}/type/{activityType}` - 활동 타입별 기록
+- `GET /api/activity/user/{userId}/range` - 날짜 범위별 활동
+- `GET /api/activity/user/{userId}/daily` - 사용자 일간 활동
+- `GET /api/activity/user/{userId}/daily/{date}` - 특정 날짜 일간 활동
+- `GET /api/activity/user/{userId}/weekly` - 사용자 주간 활동
+- `GET /api/activity/user/{userId}/weekly/{weekOfYear}` - 특정 주차 주간 활동
+
+### **뱃지 시스템 API** (`/api/badges`)
+- `GET /api/badges` - 모든 뱃지 조회
+- `GET /api/badges/{id}` - 뱃지 ID로 조회
+- `GET /api/badges/category/{category}` - 카테고리별 뱃지
+- `GET /api/badges/points/{requiredPoints}` - 포인트 요구사항별 뱃지
+- `POST /api/badges` - 새로운 뱃지 생성
+- `PUT /api/badges/{id}` - 뱃지 정보 수정
+- `DELETE /api/badges/{id}` - 뱃지 삭제
+
+### **카메라 인식 API** (`/api/camera`)
+- `POST /api/camera/recognize` - 쓰레기 인식
+
+### **TACO 모델 API** (`/api/taco`)
+- `POST /api/taco/detect` - 이미지 업로드 및 탐지
+- `POST /api/taco/status` - 모델 상태 확인
 
 ### **메인 대시보드 API** (`/api/main`)
 - `GET /api/main/dashboard/{userId}` - 사용자 대시보드 정보
 
-### **사용자 관리 API** (`/api/users`)
-- `GET /api/users/{id}` - 사용자 정보 조회
-- `PUT /api/users/{id}` - 사용자 정보 수정
-- `GET /api/users/{id}/points` - 포인트 조회
+## 🗄️ **데이터베이스 스키마**
 
-### **쓰레기 기록 API** (`/api/waste-records`)
-- `POST /api/waste-records` - 쓰레기 분리 기록 생성
-- `GET /api/waste-records/user/{userId}` - 사용자별 기록 조회
-
-### **랭킹 시스템 API** (`/api/ranking`)
-
-## 🐳 **Docker 배포**
-
-### **로컬 빌드 및 테스트**
-```bash
-# JAR 파일 빌드
-./gradlew clean bootJar
-
-# Docker 이미지 빌드
-docker build -t hackathon-backend .
-
-# 로컬에서 실행
-docker run -p 8080:8080 hackathon-backend
-```
-
-### **AWS ECR 배포**
-1. **GitHub Secrets 설정**
-   - `AWS_ACCOUNT_ID`: AWS 계정 ID
-   - `AWS_ACCESS_KEY_ID`: ECR 푸시 권한이 있는 액세스 키
-   - `AWS_SECRET_ACCESS_KEY`: 시크릿 액세스 키
-   - `EC2_HOST`: EC2 인스턴스 퍼블릭 IP 또는 호스트명
-   - `EC2_SSH_KEY`: EC2 프라이빗 키 원문 전체
-
-2. **자동 배포**
-   - `main` 브랜치에 푸시하면 자동으로 ECR에 이미지가 푸시되고 EC2에 배포됩니다
-   - GitHub Actions 워크플로우: `.github/workflows/deploy-docker.yml`
-
-3. **EC2 환경 설정**
-   - EC2에 Docker와 Docker Compose 설치 필요
-   - `/opt/app/` 디렉토리에 `docker-compose.yml`과 `.env` 파일 배치
-   - `.env` 파일 예시:
-     ```bash
-     ECR_REGISTRY=your-account-id.dkr.ecr.ap-northeast-2.amazonaws.com
-     SPRING_PROFILES_ACTIVE=prod
-     ```
-
-### **헬스 체크**
-- 헬스 엔드포인트: `http://localhost:8080/actuator/health`
-- 정보 엔드포인트: `http://localhost:8080/actuator/info`
-- `GET /api/ranking/individual` - 개인 랭킹
-- `GET /api/ranking/college` - 단과대별 랭킹
-- `GET /api/ranking/campus` - 캠퍼스별 랭킹
-
-### **상품/주문 API** (`/api/products`, `/api/orders`)
-- `GET /api/products` - 상품 목록 조회
-- `POST /api/orders` - 주문 생성
-- `GET /api/orders/user/{userId}` - 사용자별 주문 내역
+### **초기 데이터**
+- `data.sql`에 샘플 사용자, 상품, 쓰레기 기록 데이터 포함
+- 애플리케이션 시작 시 자동으로 데이터베이스에 로드
 
 ## 🚀 **실행 방법**
 
@@ -168,8 +234,8 @@ gradlew.bat bootRun
 ```
 
 ### **4. 접속 확인**
-- **애플리케이션**: http://localhost:8080
-- **H2 콘솔**: http://localhost:8080/h2-console
+- **애플리케이션**: http://localhost:8081
+- **H2 콘솔**: http://localhost:8081/h2-console
   - JDBC URL: `jdbc:h2:mem:testdb`
   - Username: `sa`
   - Password: (비어있음)
@@ -179,9 +245,14 @@ gradlew.bat bootRun
 ### **application.yml**
 ```yaml
 server:
-  port: 8080
+  port: 8081
 
 spring:
+  main:
+    allow-bean-definition-overriding: true
+  application:
+    name: hackathon-backend
+  
   datasource:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
@@ -197,14 +268,32 @@ spring:
     hibernate:
       ddl-auto: create-drop
     show-sql: true
+    defer-datasource-initialization: true
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
   
   sql:
     init:
       mode: always
       data-locations: classpath:data.sql
+  
+  security:
+    user:
+      name: admin
+      password: admin123
+
+logging:
+  level:
+    com.hackathon: DEBUG
+    org.springframework.security: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 ```
 
 ### **build.gradle**
@@ -237,7 +326,6 @@ spring:
 
 ## 📊 **API 응답 예시**
 
-
 ## 🚀 **개발 환경 설정**
 
 ### **IDE 설정**
@@ -250,3 +338,20 @@ spring:
 - H2 콘솔에서 데이터베이스 상태 실시간 모니터링
 
 ## 🔮 **향후 개발 계획**
+
+## 📈 **구조 개선 효과**
+
+### **파일 수 감소**
+- **Controller**: 15개 → 8개 (47% 감소)
+- **전체 코드량**: 약 30% 감소
+- **유지보수성**: 크게 향상
+
+### **협업 효율성**
+- **명확한 책임 분리**: 각 Controller의 역할이 명확
+- **충돌 감소**: 파일 수 감소로 인한 병합 충돌 최소화
+- **코드 이해도**: 관련 기능들이 한 곳에 모여 이해하기 쉬움
+
+### **확장성**
+- **새로운 기능 추가**: 기존 Controller에 쉽게 추가 가능
+- **API 일관성**: 통합된 구조로 일관된 API 설계
+- **테스트 용이성**: 통합된 Controller로 테스트 작성이 간단
