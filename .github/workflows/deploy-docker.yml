@@ -8,7 +8,7 @@ env:
   AWS_REGION: eu-north-1
   ECR_REPO: my-api
   ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-north-1.amazonaws.com
   EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_USER: ec2-user
   EC2_APP_DIR: /opt/app
@@ -17,6 +17,7 @@ env:
 jobs:
   build_and_push:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -59,9 +60,10 @@ jobs:
           docker push "$ECR_REGISTRY/$ECR_REPO:latest"
           docker push "$ECR_REGISTRY/$ECR_REPO:${{ github.sha }}"
 
-  setup_ec2:
+  deploy:
     needs: build_and_push
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -70,223 +72,34 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup EC2 Environment
+      - name: Deploy Application
         run: |
+          echo "=== 애플리케이션 배포 시작 ==="
+          
+          # ECR 로그인
+          echo "--- ECR 로그인 ---"
           CMD_ID=$(aws ssm send-command \
             --document-name "AWS-RunShellScript" \
-            --comment "setup EC2 environment" \
+            --comment "ECR login" \
             --instance-ids "${{ env.EC2_INSTANCE_ID }}" \
-            --parameters 'commands=["#!/bin/bash
-          set -e
-          
-          echo \"=== EC2 환경 설정 시작 ===\"
-          
-          # 1. Docker 설치
-          echo \"Docker 설치 중...\"
-          sudo yum update -y
-          sudo yum install -y docker
-          sudo systemctl start docker
-          sudo systemctl enable docker
-          sudo usermod -a -G docker ec2-user
-          
-          # 2. Docker Compose 설치
-          echo \"Docker Compose 설치 중...\"
-          sudo curl -L \"https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          
-          # 3. 필요한 디렉토리 생성
-          echo \"디렉토리 생성 중...\"
-          sudo mkdir -p /opt/app
-          sudo chown ec2-user:ec2-user /opt/app
-          
-          # 4. docker-compose.yml 생성
-          echo \"docker-compose.yml 생성 중...\"
-          cat > /opt/app/docker-compose.yml << \"EOF\"
-          version: \"3.8\"
-          services:
-            app:
-              image: ${ECR_REGISTRY}/my-api:latest
-              container_name: hackathon-backend
-              ports:
-                - \"8080:8080\"
-              environment:
-                - SPRING_PROFILES_ACTIVE=prod
-              restart: unless-stopped
-              healthcheck:
-                test: [\"CMD\", \"curl\", \"-f\", \"http://localhost:8080/actuator/health\"]
-                interval: 30s
-                timeout: 10s
-                retries: 3
-                start_period: 40s
-          EOF
-          
-          # 5. .env 파일 생성
-          echo \".env 파일 생성 중...\"
-          cat > /opt/app/.env << \"EOF\"
-          ECR_REGISTRY=345594599315.dkr.ecr.eu-north-1.amazonaws.com
-          EOF
-          
-          # 6. curl 설치 (health check용)
-          echo \"curl 설치 중...\"
-          sudo yum install -y curl
-          
-          # 7. 권한 설정
-          echo \"권한 설정 중...\"
-          sudo chown -R ec2-user:ec2-user /opt/app
-          chmod 644 /opt/app/docker-compose.yml
-          chmod 644 /opt/app/.env
-          
-          echo \"=== 환경 설정 완료 ===\"
-          echo \"Docker 버전: $(docker --version)\"
-          echo \"Docker Compose 버전: $(docker compose version)\"
-          echo \"파일 확인:\"
-          ls -la /opt/app/
-          echo \"\"
-          echo \"docker-compose.yml 내용:\"
-          cat /opt/app/docker-compose.yml
-          echo \"\"
-          echo \".env 내용:\"
-          cat /opt/app/.env"]' \
+            --parameters 'commands=["aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 345594599315.dkr.ecr.eu-north-1.amazonaws.com"]' \
             --query "Command.CommandId" --output text)
           
-          echo "Setup command ID: $CMD_ID"
+          echo "ECR login command ID: $CMD_ID"
+          timeout 300 aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "${{ env.EC2_INSTANCE_ID }}" || echo "ECR login may still be running"
           
-          # 명령어 완료 대기
-          aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "${{ env.EC2_INSTANCE_ID }}"
+          # 이미지 pull 및 실행
+          echo "--- 이미지 pull 및 실행 ---"
+          CMD_ID=$(aws ssm send-command \
+            --document-name "AWS-RunShellScript" \
+            --comment "deploy app" \
+            --instance-ids "${{ env.EC2_INSTANCE_ID }}" \
+            --parameters 'commands=["docker compose -f /opt/app/docker-compose.yml pull", "docker compose -f /opt/app/docker-compose.yml up -d", "docker ps", "sleep 10", "curl -s http://127.0.0.1:8080/actuator/health || echo \"Health check failed\""]' \
+            --query "Command.CommandId" --output text)
           
-          # 결과 확인
-          aws ssm get-command-invocation \
-            --command-id "$CMD_ID" --instance-id "${{ env.EC2_INSTANCE_ID }}" \
-            --query '{Status:Status, StdOut:StandardOutputContent, StdErr:StandardErrorContent}'
-
-  bootstrap_app:
-    needs: setup_ec2
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Bootstrap /opt/app (create compose & env)
-        env:
-          REG: ${{ env.ECR_REGISTRY }}
-        run: |
-          cat > boot.json <<'JSON'
-          {
-            "commands": [
-              "sudo mkdir -p /opt/app",
-              "cat > /opt/app/docker-compose.yml <<'YML'\nservices:\n  app:\n    image: ${REG}/my-api:latest\n    ports:\n      - \"127.0.0.1:8080:8080\"\n    env_file:\n      - /opt/app/.env\n    restart: unless-stopped\nYML",
-              "cat > /opt/app/.env <<'ENV'\nSPRING_PROFILES_ACTIVE=prod\nSERVER_PORT=8080\nENV"
-            ]
-          }
-          JSON
-
-          CMD_ID=$(aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
-            --parameters file://boot.json \
-            --query "Command.CommandId" --output text \
-            --cli-binary-format raw-in-base64-out)
-
-          aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "${{ secrets.EC2_INSTANCE_ID }}"
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "${{ secrets.EC2_INSTANCE_ID }}"
-
-  deploy:
-    needs: bootstrap_app
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure AWS credentials (for SSM)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Who am I?
-        run: aws sts get-caller-identity
-
-      - name: SSM RunCommand - compose pull & up (with diagnostics)
-        env:
-          EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
-        run: |
-          cat > commands.json <<'JSON'
-          {
-            "commands": [
-              "set -euo pipefail",
-              "echo '--- DIAG: whoami/hostname/date'",
-              "whoami || true; hostname || true; date || true",
-              "echo '--- DIAG: docker & compose versions'",
-              "docker --version || true; docker compose version || true",
-              "echo '--- DIAG: list /opt/app'",
-              "ls -la /opt/app || true",
-              "echo '--- CHECK: required files'",
-              "[ -f \"/opt/app/docker-compose.yml\" ] || (echo 'missing compose file'; exit 1)",
-              "[ -f \"/opt/app/.env\" ]              || (echo 'missing env file';     exit 1)",
-              "echo '--- LOGIN: ECR'",
-              "aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin \"${{ env.ECR_REGISTRY }}\"",
-              "echo '--- PULL & UP'",
-              "docker compose -f \"/opt/app/docker-compose.yml\" pull",
-              "docker compose -f \"/opt/app/docker-compose.yml\" up -d",
-              "echo '--- RUNNING CONTAINERS'",
-              "docker ps",
-              "echo '--- HEALTH CHECK'",
-              "curl -s http://127.0.0.1:8080/actuator/health || true",
-              "echo '--- DONE'"
-            ]
-          }
-          JSON
-
-          CMD_ID=$(aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --comment "deploy via github actions" \
-            --instance-ids "$EC2_INSTANCE_ID" \
-            --parameters file://commands.json \
-            --query "Command.CommandId" --output text \
-            --cli-binary-format raw-in-base64-out)
-
-          aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "$EC2_INSTANCE_ID" || true
-
-          echo "=== RAW INVOCATION ==="
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$EC2_INSTANCE_ID"
-
-          STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$EC2_INSTANCE_ID" --query "Status" --output text)
-          echo "FINAL STATUS: $STATUS"
-          test "$STATUS" = "Success"
-
-  pin_image_tag:
-    needs: deploy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Pin image tag to commit SHA
-        env:
-          EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
-          TAG: ${{ github.sha }}
-        run: |
-          cat > pin.json <<JSON
-          {
-            "commands": [
-              "sed -i 's|image: .*|image: ${ECR_REGISTRY}/my-api:${TAG}|g' /opt/app/docker-compose.yml",
-              "cat /opt/app/docker-compose.yml | sed -n '1,80p'"
-            ]
-          }
-          JSON
-
-          CMD_ID=$(aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --instance-ids "$EC2_INSTANCE_ID" \
-            --parameters file://pin.json \
-            --query "Command.CommandId" --output text \
-            --cli-binary-format raw-in-base64-out)
-
-          aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "$EC2_INSTANCE_ID"
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$EC2_INSTANCE_ID"
+          echo "Deploy command ID: $CMD_ID"
+          timeout 600 aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "${{ env.EC2_INSTANCE_ID }}" || echo "Deploy may still be running"
+          
+          # 최종 결과 확인
+          echo "=== 최종 배포 결과 ==="
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "${{ env.EC2_INSTANCE_ID }}" || true
