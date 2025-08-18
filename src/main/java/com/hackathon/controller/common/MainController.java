@@ -1,15 +1,16 @@
 package com.hackathon.controller.common;
 
-import com.hackathon.dto.UserDto;
-import com.hackathon.dto.WasteRecordDto;
-import com.hackathon.service.UserService;
-import com.hackathon.service.WasteRecordService;
+import com.hackathon.dto.a.UserDto;
+import com.hackathon.dto.common.WasteRecordDto;
+import com.hackathon.service.a.UserService;
+import com.hackathon.service.common.WasteRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/main")
@@ -27,7 +28,9 @@ public class MainController {
     public ResponseEntity<Map<String, Object>> getDashboard(@PathVariable Long userId) {
         try {
             UserDto user = userService.getUserById(userId);
-            List<WasteRecordDto> recentRecords = wasteRecordService.getRecentWasteRecords(userId, 5);
+            List<WasteRecordDto> recentRecords = wasteRecordService.getWasteRecordsByUserId(userId).stream()
+                .limit(5)
+                .collect(Collectors.toList());
             
             // 다음 레벨까지 필요한 포인트 계산
             int currentLevel = user.getLevel();

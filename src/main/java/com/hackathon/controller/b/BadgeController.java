@@ -1,8 +1,8 @@
 package com.hackathon.controller.b;
 
-import com.hackathon.dto.BadgeDto;
-import com.hackathon.entity.Badge;
-import com.hackathon.repository.BadgeRepository;
+import com.hackathon.dto.b.BadgeDto;
+import com.hackathon.entity.b.Badge;
+import com.hackathon.repository.b.BadgeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -94,7 +94,7 @@ public class BadgeController {
     @GetMapping("/points/{requiredPoints}")
     public ResponseEntity<Map<String, Object>> getBadgesByRequiredPoints(@PathVariable Integer requiredPoints) {
         try {
-            List<Badge> badges = badgeRepository.findByRequiredPointsLessThanEqual(requiredPoints);
+            List<Badge> badges = badgeRepository.findByPointsRequiredLessThanEqual(requiredPoints);
             
             List<BadgeDto> badgeDtos = badges.stream()
                 .map(this::convertToDto)
@@ -120,7 +120,7 @@ public class BadgeController {
             badge.setName(badgeDto.getName());
             badge.setDescription(badgeDto.getDescription());
             badge.setImageUrl(badgeDto.getImageUrl());
-            badge.setRequiredPoints(badgeDto.getRequiredPoints());
+            badge.setPointsRequired(badgeDto.getPointsRequired());
             badge.setCategory(badgeDto.getCategory());
             
             Badge saved = badgeRepository.save(badge);
@@ -149,7 +149,7 @@ public class BadgeController {
                 existingBadge.setName(badgeDto.getName());
                 existingBadge.setDescription(badgeDto.getDescription());
                 existingBadge.setImageUrl(badgeDto.getImageUrl());
-                existingBadge.setRequiredPoints(badgeDto.getRequiredPoints());
+                existingBadge.setPointsRequired(badgeDto.getPointsRequired());
                 existingBadge.setCategory(badgeDto.getCategory());
                 
                 Badge saved = badgeRepository.save(existingBadge);
@@ -206,7 +206,7 @@ public class BadgeController {
         dto.setName(badge.getName());
         dto.setDescription(badge.getDescription());
         dto.setImageUrl(badge.getImageUrl());
-        dto.setRequiredPoints(badge.getRequiredPoints());
+        dto.setPointsRequired(badge.getPointsRequired());
         dto.setCategory(badge.getCategory());
         return dto;
     }

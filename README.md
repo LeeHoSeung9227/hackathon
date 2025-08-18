@@ -1,357 +1,347 @@
-# 쓰레기 분리 포인트 시스템 - Spring Boot Backend
+# 🚀 Hackathon Project - AI 기반 폐기물 분리수거 시스템
 
-환경 보호를 위한 쓰레기 분리 포인트 시스템의 **Spring Boot 백엔드 API**입니다.
+## 📋 프로젝트 개요
+AI 모델(TACO)을 활용한 폐기물 분리수거 시스템으로, 사용자의 폐기물 사진을 분석하여 적절한 분류를 제안하고 포인트를 제공하는 플랫폼입니다.
 
-## 🚀 **프로젝트 개요**
+## 🏗️ 기술 스택
 
-현재는 백엔드 초기세팅팅
+### Backend
+- **Framework**: Spring Boot 3.2.0
+- **Language**: Java 17
+- **Build Tool**: Gradle 8.5
+- **Database**: H2 Database (In-Memory)
+- **ORM**: Spring Data JPA + Hibernate
+- **Security**: Spring Security 6.2.0 + JWT
+- **AI Integration**: Python TACO Model
 
-## 🛠️ **기술 스택**
+### Frontend
+- **Framework**: React 18.2.0
+- **Router**: React Router 6.3.0
+- **HTTP Client**: Axios
+- **Build Tool**: Vite
 
-### **Backend Framework**
-- **Spring Boot 3.2.0** - 메인 백엔드 프레임워크
-- **Java 17** - 프로그래밍 언어
-- **Gradle 8.5** - 빌드 도구
+### DevOps
+- **Container**: Docker
+- **Cloud**: AWS ECR/EC2
+- **CI/CD**: GitHub Actions
 
-### **Database & ORM**
-- **H2 Database 2.2.224** - 인메모리 데이터베이스
-- **Spring Data JPA** - 데이터 영속성
-- **Hibernate** - JPA 구현체
-
-### **Security & Authentication**
-- **Spring Security 6.2.0** - 인증 및 권한 관리
-- **JWT (JSON Web Token)** - 사용자 인증
-
-### **API & Communication**
-- **Spring Web** - REST API 컨트롤러
-- **Spring Boot DevTools** - 개발 도구
-- **CORS 설정** - 프론트엔드 통신 허용
-
-## 📁 **프로젝트 구조 (통합된 버전)**
+## 🗂️ 프로젝트 구조
 
 ```
 src/main/java/com/hackathon/
-├── HackathonApplication.java          # 메인 애플리케이션 클래스
-├── config/
-│   ├── SecurityConfig.java           # Spring Security 설정
-│   └── CorsConfig.java              # CORS 설정
-├── controller/                        # REST API 엔드포인트 (8개)
-│   ├── AuthController.java           # 인증 + 회원가입 통합
-│   ├── UserController.java           # 사용자 + 랭킹 통합
-│   ├── PointController.java          # 포인트 + 교환 내역 통합
-│   ├── AiController.java             # AI 분석 + 이미지 통합
-│   ├── ProductController.java        # 상품 + 주문 통합
-│   ├── ActivityController.java       # 활동 + 일간/주간 통합
-│   ├── BadgeController.java          # 뱃지 시스템
-│   ├── CameraController.java         # 카메라 인식
-│   ├── MainController.java           # 메인 대시보드
-│   └── HomeController.java           # 홈/헬스체크
-├── service/                          # 비즈니스 로직 계층
-│   ├── UserService.java              # 사용자 서비스
-│   ├── RankingService.java           # 랭킹 서비스
-│   ├── PointHistoryService.java      # 포인트 내역 서비스
-│   ├── ExchangeHistoryService.java   # 교환 내역 서비스
-│   ├── AiResultService.java          # AI 결과 서비스
-│   ├── ImageService.java             # 이미지 서비스
-│   ├── ProductService.java           # 상품 서비스
-│   ├── OrderService.java             # 주문 서비스
-│   ├── ActivityHistoryService.java   # 활동 기록 서비스
-│   ├── BadgeService.java             # 뱃지 서비스
-│   ├── WasteRecordService.java       # 쓰레기 기록 서비스
-│   ├── AuthLoginService.java         # 인증 서비스
-│   ├── SignupRequestService.java     # 가입 신청 서비스
-│   └── TacoModelService.java        # TACO 모델 서비스
-├── repository/                       # 데이터 접근 계층
-│   ├── UserRepository.java           # 사용자 데이터 접근
-│   ├── RankingRepository.java        # 랭킹 데이터 접근
-│   ├── PointHistoryRepository.java   # 포인트 내역 데이터 접근
-│   ├── ExchangeHistoryRepository.java # 교환 내역 데이터 접근
-│   ├── AiResultRepository.java       # AI 결과 데이터 접근
-│   ├── ImageRepository.java          # 이미지 데이터 접근
-│   ├── ProductRepository.java        # 상품 데이터 접근
-│   ├── OrderRepository.java          # 주문 데이터 접근
-│   ├── ActivityHistoryRepository.java # 활동 기록 데이터 접근
-│   ├── BadgeRepository.java          # 뱃지 데이터 접근
-│   ├── WasteRecordRepository.java    # 쓰레기 기록 데이터 접근
-│   ├── AuthLoginRepository.java      # 인증 데이터 접근
-│   └── SignupRequestRepository.java  # 가입 신청 데이터 접근
-├── entity/                           # JPA 엔티티 (12개)
-│   ├── User.java                     # 사용자 엔티티
-│   ├── WasteRecord.java              # 쓰레기 기록 엔티티
-│   ├── Product.java                  # 상품 엔티티
-│   ├── Order.java                    # 주문 엔티티
-│   ├── Badge.java                    # 뱃지 엔티티
-│   ├── Ranking.java                  # 랭킹 엔티티
-│   ├── PointHistory.java             # 포인트 내역 엔티티
-│   ├── ExchangeHistory.java          # 교환 내역 엔티티
-│   ├── ActivityHistory.java          # 활동 기록 엔티티
-│   ├── Image.java                    # 이미지 엔티티
-│   ├── AiResult.java                 # AI 결과 엔티티
-│   └── AuthLogin.java                # 인증 엔티티
-├── dto/                              # 데이터 전송 객체 (8개)
-│   ├── UserDto.java                  # 사용자 DTO
-│   ├── WasteRecordDto.java           # 쓰레기 기록 DTO
-│   ├── ProductDto.java               # 상품 DTO
-│   ├── OrderDto.java                 # 주문 DTO
-│   ├── BadgeDto.java                 # 뱃지 DTO
-│   ├── RankingDto.java               # 랭킹 DTO
-│   ├── PointHistoryDto.java          # 포인트 내역 DTO
-│   └── ActivityHistoryDto.java       # 활동 기록 DTO
-└── exception/
-    └── GlobalExceptionHandler.java    # 전역 예외 처리
+├── controller/           # REST API 컨트롤러
+│   ├── a/              # A개발자 담당 영역
+│   ├── b/              # B개발자 담당 영역
+│   └── common/         # 공통 영역
+├── service/            # 비즈니스 로직
+│   ├── a/              # A개발자 담당 영역
+│   ├── b/              # B개발자 담당 영역
+│   └── common/         # 공통 영역
+├── repository/         # 데이터 접근 계층
+│   ├── a/              # A개발자 담당 영역
+│   ├── b/              # B개발자 담당 영역
+│   └── common/         # 공통 영역
+├── entity/             # JPA 엔티티
+│   ├── a/              # A개발자 담당 영역
+│   ├── b/              # B개발자 담당 영역
+│   └── common/         # 공통 영역
+├── dto/                # 데이터 전송 객체
+│   ├── a/              # A개발자 담당 영역
+│   ├── b/              # B개발자 담당 영역
+│   └── common/         # 공통 영역
+├── config/             # 설정 클래스
+└── exception/          # 예외 처리
 ```
 
-## 🎯 **Controller 통합 결과**
+## 👥 개발자 분담 현황
 
-### **기존: 15개 Controller**
-- `AuthController`, `SignupController` → **`AuthController`** (통합)
-- `UserController`, `RankingController` → **`UserController`** (통합)
-- `PointController`, `ExchangeController` → **`PointController`** (통합)
-- `AiController`, `ImageController` → **`AiController`** (통합)
-- `ProductController`, `OrderController` → **`ProductController`** (통합)
-- `ActivityController` + Daily/Weekly → **`ActivityController`** (통합)
-- **`BadgeController`** (신규 생성)
+### 🔴 A개발자 담당 영역
+**주요 책임**: 사용자 관리, 인증, 포인트 시스템, AI 분석 결과 관리
 
-### **최종: 8개 Controller**
-1. **`AuthController`** - 인증 + 회원가입
-2. **`UserController`** - 사용자 + 랭킹
-3. **`PointController`** - 포인트 + 교환
-4. **`AiController`** - AI + 이미지
-5. **`ProductController`** - 상품 + 주문
-6. **`ActivityController`** - 활동 + 통계
-7. **`BadgeController`** - 뱃지 시스템
-8. **`CameraController`** - 카메라 인식
+#### Controller
+- `AiController` - AI 분석 결과 및 이미지 관리
+- `AuthController` - 로그인/회원가입 인증
+- `PointController` - 포인트 내역 및 교환 관리
+- `UserController` - 사용자 정보 및 랭킹 관리
 
-## 🔌 **REST API 엔드포인트**
+#### Service
+- `AiResultService` - AI 분석 결과 처리
+- `AuthLoginService` - 로그인 세션 관리
+- `ExchangeHistoryService` - 포인트 교환 내역
+- `ImageService` - 이미지 파일 관리
+- `PointHistoryService` - 포인트 적립/차감 내역
+- `RankingService` - 사용자 랭킹 관리
+- `SignupRequestService` - 회원가입 요청 처리
+- `UserService` - 사용자 정보 관리
 
-### **인증 API** (`/api/auth`)
-- `POST /api/auth/login` - 사용자 로그인
-- `POST /api/auth/logout` - 사용자 로그아웃
-- `GET /api/auth/session/{token}` - 세션 상태 확인
-- `POST /api/auth/signup/request` - 회원가입 신청
-- `GET /api/auth/signup/status/{username}` - 가입 신청 상태
-- `POST /api/auth/signup/verify/{id}` - 가입 신청 인증
-- `GET /api/auth/signup/all` - 모든 가입 신청 (관리자)
+#### Repository
+- `AiResultRepository` - AI 분석 결과 저장소
+- `AuthLoginRepository` - 로그인 세션 저장소
+- `ExchangeHistoryRepository` - 교환 내역 저장소
+- `ImageRepository` - 이미지 메타데이터 저장소
+- `PointHistoryRepository` - 포인트 내역 저장소
+- `RankingRepository` - 랭킹 데이터 저장소
+- `SignupRequestRepository` - 회원가입 요청 저장소
+- `UserRepository` - 사용자 정보 저장소
 
-### **사용자 관리 API** (`/api/users`)
-- `GET /api/users` - 전체 사용자 조회
-- `GET /api/users/{id}` - 사용자 정보 조회
-- `POST /api/users` - 사용자 생성
-- `PUT /api/users/{id}` - 사용자 정보 수정
-- `DELETE /api/users/{id}` - 사용자 삭제
-- `GET /api/users/{id}/rankings` - 사용자 랭킹 조회
-- `GET /api/users/{id}/rankings/scope/{scopeType}` - 범위별 랭킹
-- `GET /api/users/{id}/ranking-summary` - 랭킹 요약
+#### Entity
+- `AiResult` - AI 분석 결과
+- `AuthLogin` - 로그인 세션
+- `ExchangeHistory` - 포인트 교환 내역
+- `Image` - 이미지 메타데이터
+- `PointHistory` - 포인트 적립/차감 내역
+- `Ranking` - 사용자 랭킹
+- `SignupRequest` - 회원가입 요청
+- `User` - 사용자 정보
 
-### **포인트/교환 API** (`/api/points`)
-- `GET /api/points/user/{userId}` - 사용자 포인트 내역
-- `GET /api/points/image/{imagesId}` - 이미지별 포인트 내역
-- `GET /api/points/user/{userId}/type/{changeType}` - 타입별 포인트 내역
-- `GET /api/points/user/{userId}/range` - 날짜별 포인트 내역
-- `GET /api/points/user/{userId}/exchanges` - 사용자 교환 내역
-- `GET /api/points/exchanges/product/{productId}` - 상품별 교환 내역
-- `GET /api/points/user/{userId}/exchanges/product/{productId}` - 사용자별 상품별 교환
-- `GET /api/points/user/{userId}/exchanges/range` - 날짜별 교환 내역
+#### DTO
+- `AiResultDto` - AI 분석 결과 전송 객체
+- `AuthLoginDto` - 로그인 정보 전송 객체
+- `ExchangeHistoryDto` - 교환 내역 전송 객체
+- `ImageDto` - 이미지 정보 전송 객체
+- `PointHistoryDto` - 포인트 내역 전송 객체
+- `RankingDto` - 랭킹 정보 전송 객체
+- `SignupRequestDto` - 회원가입 요청 전송 객체
+- `UserDto` - 사용자 정보 전송 객체
 
-### **AI/이미지 API** (`/api/ai`)
-- `GET /api/ai/image/{imagesId}` - 이미지별 AI 분석 결과
-- `GET /api/ai/user/{userId}` - 사용자별 AI 분석 결과
-- `GET /api/ai/material/{materialType}` - 재질별 AI 분석 결과
-- `GET /api/ai/status/{isApproved}` - 승인 상태별 AI 분석 결과
-- `GET /api/ai/range` - 날짜별 AI 분석 결과
-- `GET /api/ai/images/user/{userId}` - 사용자 이미지 목록
-- `GET /api/ai/images/status/{status}` - 상태별 이미지 조회
-- `GET /api/ai/images/user/{userId}/status/{status}` - 사용자별 상태별 이미지
-- `GET /api/ai/images/range` - 날짜별 이미지 조회
-- `GET /api/ai/images/{imageId}` - 이미지 상세 정보
+### 🔵 B개발자 담당 영역
+**주요 책임**: 상품 관리, 주문 시스템, 활동 기록, 뱃지 시스템
 
-### **상품/주문 API** (`/api/products`)
-- `GET /api/products` - 전체 상품 조회
-- `GET /api/products/{id}` - 상품 ID로 조회
-- `POST /api/products` - 상품 생성
-- `PUT /api/products/{id}` - 상품 정보 수정
-- `DELETE /api/products/{id}` - 상품 삭제
-- `GET /api/products/orders` - 전체 주문 조회
-- `GET /api/products/orders/{id}` - 주문 ID로 조회
-- `POST /api/products/orders` - 주문 생성
-- `PUT /api/products/orders/{id}/status` - 주문 상태 수정
-- `DELETE /api/products/orders/{id}` - 주문 삭제
+#### Controller
+- `ActivityController` - 사용자 활동 기록 관리
+- `BadgeController` - 뱃지 시스템 관리
+- `ProductController` - 상품 및 주문 관리
 
-### **활동 기록 API** (`/api/activity`)
-- `GET /api/activity/user/{userId}` - 사용자 활동 기록
-- `GET /api/activity/user/{userId}/date/{date}` - 특정 날짜 활동
-- `GET /api/activity/user/{userId}/type/{activityType}` - 활동 타입별 기록
-- `GET /api/activity/user/{userId}/range` - 날짜 범위별 활동
-- `GET /api/activity/user/{userId}/daily` - 사용자 일간 활동
-- `GET /api/activity/user/{userId}/daily/{date}` - 특정 날짜 일간 활동
-- `GET /api/activity/user/{userId}/weekly` - 사용자 주간 활동
-- `GET /api/activity/user/{userId}/weekly/{weekOfYear}` - 특정 주차 주간 활동
+#### Service
+- `ActivityHistoryService` - 활동 기록 처리
+- `BadgeService` - 뱃지 발급/관리
+- `DailyActivityService` - 일간 활동 통계
+- `OrderService` - 주문 처리
+- `ProductService` - 상품 관리
+- `UserBadgeService` - 사용자 뱃지 관리
+- `WeeklyActivityService` - 주간 활동 통계
 
-### **뱃지 시스템 API** (`/api/badges`)
-- `GET /api/badges` - 모든 뱃지 조회
-- `GET /api/badges/{id}` - 뱃지 ID로 조회
-- `GET /api/badges/category/{category}` - 카테고리별 뱃지
-- `GET /api/badges/points/{requiredPoints}` - 포인트 요구사항별 뱃지
-- `POST /api/badges` - 새로운 뱃지 생성
-- `PUT /api/badges/{id}` - 뱃지 정보 수정
-- `DELETE /api/badges/{id}` - 뱃지 삭제
+#### Repository
+- `ActivityHistoryRepository` - 활동 기록 저장소
+- `BadgeRepository` - 뱃지 정보 저장소
+- `DailyActivityRepository` - 일간 활동 저장소
+- `OrderRepository` - 주문 정보 저장소
+- `ProductRepository` - 상품 정보 저장소
+- `UserBadgeRepository` - 사용자 뱃지 저장소
+- `WeeklyActivityRepository` - 주간 활동 저장소
 
-### **카메라 인식 API** (`/api/camera`)
-- `POST /api/camera/recognize` - 쓰레기 인식
+#### Entity
+- `ActivityHistory` - 사용자 활동 기록
+- `Badge` - 뱃지 정보
+- `DailyActivity` - 일간 활동 통계
+- `Order` - 주문 정보
+- `OrderItem` - 주문 상품 항목
+- `Product` - 상품 정보
+- `UserBadge` - 사용자 뱃지 보유 현황
+- `WeeklyActivity` - 주간 활동 통계
 
-### **TACO 모델 API** (`/api/taco`)
-- `POST /api/taco/detect` - 이미지 업로드 및 탐지
-- `POST /api/taco/status` - 모델 상태 확인
+#### DTO
+- `ActivityHistoryDto` - 활동 기록 전송 객체
+- `BadgeDto` - 뱃지 정보 전송 객체
+- `DailyActivityDto` - 일간 활동 전송 객체
+- `OrderDto` - 주문 정보 전송 객체
+- `ProductDto` - 상품 정보 전송 객체
+- `WeeklyActivityDto` - 주간 활동 전송 객체
 
-### **메인 대시보드 API** (`/api/main`)
-- `GET /api/main/dashboard/{userId}` - 사용자 대시보드 정보
+### 🟡 공통 영역
+**주요 책임**: 폐기물 기록, AI 모델 통합, 메인 대시보드
 
-## 🗄️ **데이터베이스 스키마**
+#### Controller
+- `CameraController` - 카메라 관련 기능
+- `HomeController` - 홈 화면
+- `MainController` - 메인 대시보드
+- `TacoModelController` - AI 모델 통합
 
-### **초기 데이터**
-- `data.sql`에 샘플 사용자, 상품, 쓰레기 기록 데이터 포함
-- 애플리케이션 시작 시 자동으로 데이터베이스에 로드
+#### Service
+- `TacoModelService` - Python TACO 모델 실행
+- `WasteRecordService` - 폐기물 기록 처리
 
-## 🚀 **실행 방법**
+#### Repository
+- `WasteRecordRepository` - 폐기물 기록 저장소
 
-### **1. 사전 요구사항**
-- **Java 17** 이상 설치
-- **Gradle** (프로젝트에 Gradle Wrapper 포함)
+#### Entity
+- `WasteRecord` - 폐기물 분리수거 기록
 
-### **2. 프로젝트 클론**
+#### DTO
+- `WasteRecordDto` - 폐기물 기록 전송 객체
+
+## 🗄️ 데이터베이스 스키마 통합 현황
+
+### 📊 A개발자 담당 테이블
+| 테이블명 | 설명 | 주요 필드 |
+|---------|------|-----------|
+| `users` | 사용자 정보 | id, username, email, password, level, points_total, college, campus |
+| `auth_login` | 로그인 세션 | id, userId, token, expiresAt |
+| `signup_requests` | 회원가입 요청 | id, username, email, password, name, college, campus |
+| `ai_results` | AI 분석 결과 | id, imageId, userId, wasteType, confidence, resultData |
+| `images` | 이미지 메타데이터 | id, userId, imageUrl, fileName, contentType, fileSize |
+| `point_history` | 포인트 내역 | id, userId, type, points, description |
+| `exchange_history` | 포인트 교환 내역 | id, userId, productName, quantity, totalAmount |
+| `rankings` | 사용자 랭킹 | id, userId, category, scope |
+
+### 📊 B개발자 담당 테이블
+| 테이블명 | 설명 | 주요 필드 |
+|---------|------|-----------|
+| `products` | 상품 정보 | id, name, description, price, pointsRequired, stockQuantity |
+| `orders` | 주문 정보 | id, userId, status, totalAmount, totalPoints |
+| `order_items` | 주문 상품 항목 | id, orderId, productId, productName, quantity, unitPrice |
+| `activity_history` | 활동 기록 | id, userId, activityType, pointsEarned, description |
+| `daily_activity` | 일간 활동 통계 | id, userId, activityDate, totalPoints, activitiesCount |
+| `weekly_activity` | 주간 활동 통계 | id, userId, weekStartDate, weekEndDate, totalPoints, activitiesCount |
+| `badges` | 뱃지 정보 | id, name, description, imageUrl, pointsRequired, category |
+| `user_badges` | 사용자 뱃지 보유 현황 | id, userId, badgeId, earnedAt |
+
+### 📊 공통 테이블
+| 테이블명 | 설명 | 주요 필드 |
+|---------|------|-----------|
+| `waste_records` | 폐기물 분리수거 기록 | id, userId, wasteType, points, imageUrl |
+
+## 🔄 API 엔드포인트 구조
+
+### A개발자 API (`/api/*`)
+- **AI 분석**: `/api/ai/*` - 이미지 분석, AI 결과 조회
+- **인증**: `/api/auth/*` - 로그인, 회원가입
+- **포인트**: `/api/points/*` - 포인트 내역, 교환
+- **사용자**: `/api/users/*` - 사용자 정보, 랭킹
+
+### B개발자 API (`/api/*`)
+- **활동**: `/api/activity/*` - 활동 기록, 통계
+- **뱃지**: `/api/badges/*` - 뱃지 관리
+- **상품**: `/api/products/*` - 상품, 주문 관리
+
+### 공통 API (`/api/*`)
+- **메인**: `/api/main/*` - 대시보드
+- **AI 모델**: `/api/taco/*` - TACO 모델 통합
+- **카메라**: `/api/camera/*` - 카메라 기능
+- **홈**: `/api/home/*` - 홈 화면
+
+## 🚀 실행 방법
+
+### 1. 백엔드 실행
 ```bash
-git clone https://github.com/LeeHoSeung9227/hackathon.git
-cd hackathon
-```
-
-### **3. 백엔드 실행**
-```bash
-# Windows
-gradlew.bat bootRun
-
-# Linux/Mac
+# 프로젝트 루트 디렉토리에서
 ./gradlew bootRun
 ```
 
-### **4. 접속 확인**
-- **애플리케이션**: http://localhost:8081
-- **H2 콘솔**: http://localhost:8081/h2-console
-  - JDBC URL: `jdbc:h2:mem:testdb`
-  - Username: `sa`
-  - Password: (비어있음)
-
-## 🔧 **설정 파일**
-
-### **application.yml**
-```yaml
-server:
-  port: 8081
-
-spring:
-  main:
-    allow-bean-definition-overriding: true
-  application:
-    name: hackathon-backend
-  
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: 
-  
-  h2:
-    console:
-      enabled: true
-      path: /h2-console
-  
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-    defer-datasource-initialization: true
-    properties:
-      hibernate:
-        format_sql: true
-        dialect: org.hibernate.dialect.H2Dialect
-  
-  sql:
-    init:
-      mode: always
-      data-locations: classpath:data.sql
-  
-  security:
-    user:
-      name: admin
-      password: admin123
-
-logging:
-  level:
-    com.hackathon: DEBUG
-    org.springframework.security: DEBUG
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
+### 2. 프론트엔드 실행
+```bash
+# frontend 디렉토리에서
+npm install
+npm run dev
 ```
 
-### **build.gradle**
-- Spring Boot 3.2.0
-- Spring Security, JPA, H2, Lombok 등 의존성 포함
-
-## 🧪 **테스트 데이터**
-
-### **초기 사용자**
-| ID | 사용자명 | 닉네임 | 포인트 | 등급 | 랭킹 |
-|----|----------|--------|--------|------|------|
-| 1  | admin    | 관리자 | 1000   | GOLD | 1위  |
-| 2  | user1    | 설호   | 750    | SILVER | 2위 |
-| 3  | user2    | 김지수 | 500    | SILVER | 3위 |
-| 4  | user3    | 이가은 | 300    | BRONZE | 4위 |
-| 5  | user4    | 이호승 | 200    | BRONZE | 5위 |
-
-## 🔒 **보안 설정**
-
-### **CORS 설정**
-```java
-@CrossOrigin(origins = "*")
+### 3. Docker 실행
+```bash
+docker-compose up -d
 ```
-- 모든 도메인에서 API 접근 허용
-- 개발 환경용 설정
 
-### **Spring Security**
-- 기본 인증 및 권한 관리
-- JWT 토큰 기반 인증 (구현 예정)
+## 🔧 개발 환경 설정
 
-## 📊 **API 응답 예시**
+### 필수 요구사항
+- Java 17+
+- Node.js 18+
+- Python 3.8+ (TACO 모델용)
+- Docker (선택사항)
 
-## 🚀 **개발 환경 설정**
+### 환경 변수
+```bash
+# application.properties 또는 환경 변수로 설정
+SPRING_PROFILES_ACTIVE=dev
+TACO_MODEL_PATH=/path/to/taco_model.py
+```
 
-### **IDE 설정**
-- **IntelliJ IDEA** 또는 **Eclipse** 권장
-- **Spring Boot DevTools** 활성화로 자동 재시작
-- **H2 Database** 콘솔 접근 가능
+## 📝 개발 가이드라인
 
-### **디버깅**
-- `application.yml`에서 `show-sql: true`로 SQL 쿼리 로그 확인
-- H2 콘솔에서 데이터베이스 상태 실시간 모니터링
+### 코드 스타일
+- **Java**: Google Java Style Guide 준수
+- **React**: ESLint + Prettier 설정 사용
+- **주석**: 한국어로 작성 (비즈니스 로직 설명)
 
-## 🔮 **향후 개발 계획**
+### 커밋 메시지 규칙
+```
+feat: 새로운 기능 추가
+fix: 버그 수정
+docs: 문서 수정
+style: 코드 포맷팅
+refactor: 코드 리팩토링
+test: 테스트 코드 추가
+chore: 빌드 업무 수정
+```
 
-## 📈 **구조 개선 효과**
+### 브랜치 전략
+- `main`: 프로덕션 배포용
+- `develop`: 개발 통합용
+- `feature/기능명`: 기능 개발용
+- `hotfix/버그명`: 긴급 수정용
 
-### **파일 수 감소**
-- **Controller**: 15개 → 8개 (47% 감소)
-- **전체 코드량**: 약 30% 감소
-- **유지보수성**: 크게 향상
+## 🧪 테스트
 
-### **협업 효율성**
-- **명확한 책임 분리**: 각 Controller의 역할이 명확
-- **충돌 감소**: 파일 수 감소로 인한 병합 충돌 최소화
-- **코드 이해도**: 관련 기능들이 한 곳에 모여 이해하기 쉬움
+### 백엔드 테스트
+```bash
+./gradlew test
+```
 
-### **확장성**
-- **새로운 기능 추가**: 기존 Controller에 쉽게 추가 가능
-- **API 일관성**: 통합된 구조로 일관된 API 설계
-- **테스트 용이성**: 통합된 Controller로 테스트 작성이 간단
+### 프론트엔드 테스트
+```bash
+npm test
+```
+
+### 통합 테스트
+```bash
+./gradlew integrationTest
+```
+
+## 📊 모니터링 및 로깅
+
+### 로그 레벨
+- **ERROR**: 시스템 오류, 예외 상황
+- **WARN**: 경고 상황, 주의 필요
+- **INFO**: 일반 정보, 비즈니스 로직
+- **DEBUG**: 개발 디버깅 정보
+
+### 헬스 체크
+- `/actuator/health`: 애플리케이션 상태 확인
+- `/api/taco/health`: TACO 모델 상태 확인
+
+## 🔒 보안
+
+### 인증 방식
+- JWT 토큰 기반 인증
+- Spring Security 6.2.0 사용
+- BCrypt 패스워드 암호화
+
+### CORS 설정
+- 개발 환경: 모든 도메인 허용
+- 프로덕션: 특정 도메인만 허용
+
+## 🚀 배포
+
+### AWS 배포
+1. ECR에 Docker 이미지 푸시
+2. EC2 인스턴스에 배포
+3. GitHub Actions로 자동 배포
+
+### 환경별 설정
+- `dev`: 개발 환경
+- `staging`: 스테이징 환경
+- `prod`: 프로덕션 환경
+
+## 📞 연락처 및 지원
+
+### 개발팀
+- **A개발자**: 사용자 관리, 인증, 포인트 시스템
+- **B개발자**: 상품 관리, 주문, 활동 기록, 뱃지
+
+### 이슈 리포트
+- GitHub Issues 사용
+- 버그 리포트 시 상세한 재현 단계 포함
+
+---
+
+**마지막 업데이트**: 2024년 12월
+**버전**: 1.0.0

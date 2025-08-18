@@ -1,10 +1,10 @@
 package com.hackathon.controller.a;
 
-import com.hackathon.dto.AuthLoginDto;
-import com.hackathon.dto.SignupRequestDto;
-import com.hackathon.service.AuthLoginService;
-import com.hackathon.service.SignupRequestService;
-import com.hackathon.service.UserService;
+import com.hackathon.dto.a.AuthLoginDto;
+import com.hackathon.dto.a.SignupRequestDto;
+import com.hackathon.service.a.AuthLoginService;
+import com.hackathon.service.a.SignupRequestService;
+import com.hackathon.service.a.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -104,19 +104,11 @@ public class AuthController {
     @GetMapping("/session/{token}")
     public ResponseEntity<Map<String, Object>> checkSession(@PathVariable String token) {
         try {
-            var loginSession = authLoginService.getLoginSession(token);
-            
-            if (loginSession.isPresent()) {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "data", loginSession.get()
-                ));
-            } else {
-                return ResponseEntity.ok(Map.of(
-                    "success", false,
-                    "message", "유효하지 않은 세션입니다."
-                ));
-            }
+            AuthLoginDto loginSession = authLoginService.getLoginSession(token);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", loginSession
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
@@ -137,7 +129,10 @@ public class AuthController {
                     .body(Map.of("error", "사용자명과 이메일은 필수입니다."));
             }
             
-            SignupRequestDto signupRequest = signupRequestService.createSignupRequest(username, email);
+            // 간소화: 예시로 비밀번호/프로필 정보는 임시 값
+            SignupRequestDto signupRequest = signupRequestService.createSignupRequest(
+                username, email, "tempPassword", "tempName", null, null
+            );
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -156,19 +151,18 @@ public class AuthController {
     @GetMapping("/signup/status/{username}")
     public ResponseEntity<Map<String, Object>> getSignupStatus(@PathVariable String username) {
         try {
-            var signupRequest = signupRequestService.getSignupRequestByUsername(username);
-            
-            if (signupRequest.isPresent()) {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "data", signupRequest.get()
-                ));
-            } else {
-                return ResponseEntity.ok(Map.of(
-                    "success", false,
-                    "message", "가입 신청을 찾을 수 없습니다."
-                ));
-            }
+            SignupRequestDto signupRequest = signupRequestService.getSignupRequestById(
+                signupRequestService
+                    .getAllSignupRequests().stream()
+                    .filter(r -> username.equals(r.getUsername()))
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("가입 신청을 찾을 수 없습니다."))
+                    .getId()
+            );
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", signupRequest
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
@@ -181,7 +175,7 @@ public class AuthController {
     @PostMapping("/signup/verify/{id}")
     public ResponseEntity<Map<String, Object>> verifySignupRequest(@PathVariable Long id) {
         try {
-            SignupRequestDto verified = signupRequestService.verifySignupRequest(id);
+            SignupRequestDto verified = signupRequestService.updateSignupRequestStatus(id, "VERIFIED");
             
             return ResponseEntity.ok(Map.of(
                 "success", true,

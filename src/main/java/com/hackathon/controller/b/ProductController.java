@@ -1,9 +1,9 @@
 package com.hackathon.controller.b;
 
-import com.hackathon.dto.ProductDto;
-import com.hackathon.dto.OrderDto;
-import com.hackathon.service.ProductService;
-import com.hackathon.service.OrderService;
+import com.hackathon.dto.b.ProductDto;
+import com.hackathon.dto.b.OrderDto;
+import com.hackathon.service.b.ProductService;
+import com.hackathon.service.b.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,7 +33,17 @@ public class ProductController {
 
     @PostMapping
     public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
-        return ResponseEntity.ok(productService.createProduct(productDto));
+        return ResponseEntity.ok(
+            productService.createProduct(
+                productDto.getName(),
+                productDto.getDescription(),
+                productDto.getPrice(),
+                productDto.getPointsRequired(),
+                productDto.getStockQuantity(),
+                productDto.getCategory(),
+                productDto.getImageUrl()
+            )
+        );
     }
 
     @PutMapping("/{id}")
@@ -61,7 +71,14 @@ public class ProductController {
 
     @PostMapping("/orders")
     public ResponseEntity<OrderDto> createOrder(@RequestBody OrderDto orderDto) {
-        return ResponseEntity.ok(orderService.createOrder(orderDto));
+        return ResponseEntity.ok(
+            orderService.createOrder(
+                orderDto.getUserId(),
+                orderDto.getStatus(),
+                orderDto.getTotalAmount(),
+                orderDto.getTotalPoints()
+            )
+        );
     }
 
     @PutMapping("/orders/{id}/status")

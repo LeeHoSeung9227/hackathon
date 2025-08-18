@@ -1,9 +1,9 @@
 package com.hackathon.controller.a;
 
-import com.hackathon.dto.UserDto;
-import com.hackathon.dto.RankingDto;
-import com.hackathon.service.UserService;
-import com.hackathon.service.RankingService;
+import com.hackathon.dto.a.UserDto;
+import com.hackathon.dto.a.RankingDto;
+import com.hackathon.service.a.UserService;
+import com.hackathon.service.a.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +34,16 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserDto> createUser(@RequestBody UserDto userDto) {
-        return ResponseEntity.ok(userService.createUser(userDto));
+        return ResponseEntity.ok(
+            userService.createUser(
+                userDto.getUsername(),
+                userDto.getEmail(),
+                "tempPassword",
+                userDto.getName(),
+                userDto.getCollege(),
+                userDto.getCampus()
+            )
+        );
     }
 
     @PutMapping("/{id}")
@@ -76,11 +85,11 @@ public class UserController {
     @GetMapping("/{id}/rankings")
     public ResponseEntity<Map<String, Object>> getUserRankings(@PathVariable Long id) {
         try {
-            RankingDto ranking = rankingService.getUserRank(id);
+            List<RankingDto> rankings = rankingService.getUserRankings(id);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", ranking
+                "data", rankings
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -94,12 +103,16 @@ public class UserController {
     @GetMapping("/{id}/ranking-summary")
     public ResponseEntity<Map<String, Object>> getUserRankingSummary(@PathVariable Long id) {
         try {
-            RankingDto ranking = rankingService.getUserRank(id);
-            Map<String, Object> summary = Map.of(
-                "rank", ranking.getRankPosition(),
-                "points", ranking.getPoints(),
-                "membershipLevel", ranking.getMembershipLevel(),
+            List<RankingDto> rankings = rankingService.getUserRankings(id);
+            RankingDto top = rankings.isEmpty() ? null : rankings.get(0);
+            Map<String, Object> summary = top == null ? Map.of(
+                "rank", null,
+                "points", 0,
                 "category", "INDIVIDUAL"
+            ) : Map.of(
+                "rank", top.getRankPosition(),
+                "points", top.getPoints(),
+                "category", top.getCategory()
             );
             
             return ResponseEntity.ok(Map.of(

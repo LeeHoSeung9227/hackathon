@@ -1,11 +1,11 @@
 package com.hackathon.controller.a;
 
-import com.hackathon.dto.AiResultDto;
-import com.hackathon.dto.ImageDto;
-import com.hackathon.entity.AiResult;
-import com.hackathon.entity.Image;
-import com.hackathon.repository.AiResultRepository;
-import com.hackathon.repository.ImageRepository;
+import com.hackathon.dto.a.AiResultDto;
+import com.hackathon.dto.a.ImageDto;
+import com.hackathon.entity.a.AiResult;
+import com.hackathon.entity.a.Image;
+import com.hackathon.repository.a.AiResultRepository;
+import com.hackathon.repository.a.ImageRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,19 +35,12 @@ public class AiController {
     @GetMapping("/image/{imagesId}")
     public ResponseEntity<Map<String, Object>> getAiResultByImage(@PathVariable Long imagesId) {
         try {
-            var aiResult = aiResultRepository.findByImagesId(imagesId);
-            
-            if (aiResult.isPresent()) {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "data", convertToDto(aiResult.get())
-                ));
-            } else {
-                return ResponseEntity.ok(Map.of(
-                    "success", false,
-                    "message", "AI 분석 결과를 찾을 수 없습니다."
-                ));
-            }
+            List<AiResult> aiResults = aiResultRepository.findByImageIdOrderByCreatedAtDesc(imagesId);
+            List<AiResultDto> aiResultDtos = aiResults.stream().map(this::convertToDto).collect(Collectors.toList());
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", aiResultDtos
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
@@ -60,7 +53,7 @@ public class AiController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<Map<String, Object>> getUserAiResults(@PathVariable Long userId) {
         try {
-            List<AiResult> aiResults = aiResultRepository.findByUserId(userId);
+            List<AiResult> aiResults = aiResultRepository.findByUserIdOrderByCreatedAtDesc(userId);
             
             List<AiResultDto> aiResultDtos = aiResults.stream()
                 .map(this::convertToDto)
@@ -82,7 +75,7 @@ public class AiController {
     @GetMapping("/material/{materialType}")
     public ResponseEntity<Map<String, Object>> getAiResultsByMaterialType(@PathVariable String materialType) {
         try {
-            List<AiResult> aiResults = aiResultRepository.findByMaterialType(materialType);
+            List<AiResult> aiResults = aiResultRepository.findByWasteTypeOrderByCreatedAtDesc(materialType);
             
             List<AiResultDto> aiResultDtos = aiResults.stream()
                 .map(this::convertToDto)
@@ -104,16 +97,7 @@ public class AiController {
     @GetMapping("/status/{isApproved}")
     public ResponseEntity<Map<String, Object>> getAiResultsByApprovalStatus(@PathVariable Boolean isApproved) {
         try {
-            List<AiResult> aiResults = aiResultRepository.findByIsApproved(isApproved);
-            
-            List<AiResultDto> aiResultDtos = aiResults.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", aiResultDtos
-            ));
+            return ResponseEntity.badRequest().body(Map.of("error", "승인 상태별 조회는 지원하지 않습니다."));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
@@ -155,7 +139,7 @@ public class AiController {
     @GetMapping("/images/user/{userId}")
     public ResponseEntity<Map<String, Object>> getUserImages(@PathVariable Long userId) {
         try {
-            List<Image> images = imageRepository.findByUserId(userId);
+            List<Image> images = imageRepository.findByUserIdOrderByCreatedAtDesc(userId);
             
             List<ImageDto> imageDtos = images.stream()
                 .map(this::convertToImageDto)
@@ -176,21 +160,7 @@ public class AiController {
      */
     @GetMapping("/images/status/{status}")
     public ResponseEntity<Map<String, Object>> getImagesByStatus(@PathVariable String status) {
-        try {
-            List<Image> images = imageRepository.findByStatus(status);
-            
-            List<ImageDto> imageDtos = images.stream()
-                .map(this::convertToImageDto)
-                .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", imageDtos
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
+        return ResponseEntity.badRequest().body(Map.of("error", "이미지 상태별 조회는 지원하지 않습니다."));
     }
     
     /**
@@ -200,21 +170,7 @@ public class AiController {
     public ResponseEntity<Map<String, Object>> getUserImagesByStatus(
             @PathVariable Long userId, 
             @PathVariable String status) {
-        try {
-            List<Image> images = imageRepository.findByUserIdAndStatus(userId, status);
-            
-            List<ImageDto> imageDtos = images.stream()
-                .map(this::convertToImageDto)
-                .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", imageDtos
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
+        return ResponseEntity.badRequest().body(Map.of("error", "사용자/상태별 조회는 지원하지 않습니다."));
     }
     
     /**
@@ -274,12 +230,13 @@ public class AiController {
     private AiResultDto convertToDto(AiResult aiResult) {
         AiResultDto dto = new AiResultDto();
         dto.setId(aiResult.getId());
-        dto.setImagesId(aiResult.getImagesId());
+        dto.setImageId(aiResult.getImageId());
         dto.setUserId(aiResult.getUserId());
-        dto.setMaterialType(aiResult.getMaterialType());
+        dto.setWasteType(aiResult.getWasteType());
         dto.setConfidence(aiResult.getConfidence());
-        dto.setIsApproved(aiResult.getIsApproved());
+        dto.setResultData(aiResult.getResultData());
         dto.setCreatedAt(aiResult.getCreatedAt());
+        dto.setUpdatedAt(aiResult.getUpdatedAt());
         return dto;
     }
     
@@ -288,8 +245,11 @@ public class AiController {
         dto.setId(image.getId());
         dto.setUserId(image.getUserId());
         dto.setImageUrl(image.getImageUrl());
-        dto.setStatus(image.getStatus());
+        dto.setFileName(image.getFileName());
+        dto.setContentType(image.getContentType());
+        dto.setFileSize(image.getFileSize());
         dto.setCreatedAt(image.getCreatedAt());
+        dto.setUpdatedAt(image.getUpdatedAt());
         return dto;
     }
 }

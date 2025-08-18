@@ -1,14 +1,14 @@
 package com.hackathon.controller.b;
 
-import com.hackathon.dto.ActivityHistoryDto;
-import com.hackathon.dto.DailyActivityDto;
-import com.hackathon.dto.WeeklyActivityDto;
-import com.hackathon.entity.ActivityHistory;
-import com.hackathon.entity.DailyActivity;
-import com.hackathon.entity.WeeklyActivity;
-import com.hackathon.repository.ActivityHistoryRepository;
-import com.hackathon.repository.DailyActivityRepository;
-import com.hackathon.repository.WeeklyActivityRepository;
+import com.hackathon.dto.b.ActivityHistoryDto;
+import com.hackathon.dto.b.DailyActivityDto;
+import com.hackathon.dto.b.WeeklyActivityDto;
+import com.hackathon.entity.b.ActivityHistory;
+import com.hackathon.entity.b.DailyActivity;
+import com.hackathon.entity.b.WeeklyActivity;
+import com.hackathon.repository.b.ActivityHistoryRepository;
+import com.hackathon.repository.b.DailyActivityRepository;
+import com.hackathon.repository.b.WeeklyActivityRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -43,7 +43,7 @@ public class ActivityController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<Map<String, Object>> getUserActivities(@PathVariable Long userId) {
         try {
-            List<ActivityHistory> activities = activityHistoryRepository.findByUserId(userId);
+            List<ActivityHistory> activities = activityHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
             
             List<ActivityHistoryDto> activityDtos = activities.stream()
                 .map(this::convertToDto)
@@ -68,7 +68,7 @@ public class ActivityController {
             @PathVariable String date) {
         try {
             LocalDate activityDate = LocalDate.parse(date);
-            List<ActivityHistory> activities = activityHistoryRepository.findByUserIdAndActivityDate(userId, activityDate);
+            List<ActivityHistory> activities = activityHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
             
             List<ActivityHistoryDto> activityDtos = activities.stream()
                 .map(this::convertToDto)
@@ -92,7 +92,7 @@ public class ActivityController {
             @PathVariable Long userId, 
             @PathVariable String activityType) {
         try {
-            List<ActivityHistory> activities = activityHistoryRepository.findByUserIdAndActivityType(userId, activityType);
+            List<ActivityHistory> activities = activityHistoryRepository.findByUserIdAndActivityTypeOrderByCreatedAtDesc(userId, activityType);
             
             List<ActivityHistoryDto> activityDtos = activities.stream()
                 .map(this::convertToDto)
@@ -120,7 +120,7 @@ public class ActivityController {
             LocalDate start = LocalDate.parse(startDate);
             LocalDate end = LocalDate.parse(endDate);
             
-            List<ActivityHistory> activities = activityHistoryRepository.findByUserIdAndActivityDateBetween(userId, start, end);
+            List<ActivityHistory> activities = activityHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
             
             List<ActivityHistoryDto> activityDtos = activities.stream()
                 .map(this::convertToDto)
@@ -144,7 +144,7 @@ public class ActivityController {
     @GetMapping("/user/{userId}/daily")
     public ResponseEntity<Map<String, Object>> getUserDailyActivities(@PathVariable Long userId) {
         try {
-            List<DailyActivity> dailyActivities = dailyActivityRepository.findByUserId(userId);
+            List<DailyActivity> dailyActivities = dailyActivityRepository.findByUserIdOrderByActivityDateDesc(userId);
             
             List<DailyActivityDto> dailyDtos = dailyActivities.stream()
                 .map(this::convertToDailyDto)
@@ -196,7 +196,7 @@ public class ActivityController {
     @GetMapping("/user/{userId}/weekly")
     public ResponseEntity<Map<String, Object>> getUserWeeklyActivities(@PathVariable Long userId) {
         try {
-            List<WeeklyActivity> weeklyActivities = weeklyActivityRepository.findByUserId(userId);
+            List<WeeklyActivity> weeklyActivities = weeklyActivityRepository.findByUserIdOrderByWeekStartDateDesc(userId);
             
             List<WeeklyActivityDto> weeklyDtos = weeklyActivities.stream()
                 .map(this::convertToWeeklyDto)
@@ -220,19 +220,7 @@ public class ActivityController {
             @PathVariable Long userId, 
             @PathVariable Integer weekOfYear) {
         try {
-            var weeklyActivity = weeklyActivityRepository.findByUserIdAndWeekOfYear(userId, weekOfYear);
-            
-            if (weeklyActivity.isPresent()) {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "data", convertToWeeklyDto(weeklyActivity.get())
-                ));
-            } else {
-                return ResponseEntity.ok(Map.of(
-                    "success", false,
-                    "message", "해당 주차의 주간 활동을 찾을 수 없습니다."
-                ));
-            }
+            return ResponseEntity.badRequest().body(Map.of("error", "weekOfYear 기반 조회는 지원하지 않습니다. 주 시작일을 사용하세요."));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
@@ -246,8 +234,8 @@ public class ActivityController {
         dto.setId(activity.getId());
         dto.setUserId(activity.getUserId());
         dto.setActivityType(activity.getActivityType());
-        dto.setActivityDate(activity.getActivityDate());
-        dto.setPoints(activity.getPoints());
+        // ActivityHistory에는 activityDate 필드가 없으므로 createdAt 사용
+        dto.setPointsEarned(activity.getPointsEarned());
         dto.setDescription(activity.getDescription());
         dto.setCreatedAt(activity.getCreatedAt());
         return dto;
@@ -259,7 +247,7 @@ public class ActivityController {
         dto.setUserId(daily.getUserId());
         dto.setActivityDate(daily.getActivityDate());
         dto.setTotalPoints(daily.getTotalPoints());
-        dto.setActivityCount(daily.getActivityCount());
+        dto.setActivitiesCount(daily.getActivitiesCount());
         return dto;
     }
     
@@ -267,9 +255,10 @@ public class ActivityController {
         WeeklyActivityDto dto = new WeeklyActivityDto();
         dto.setId(weekly.getId());
         dto.setUserId(weekly.getUserId());
-        dto.setWeekOfYear(weekly.getWeekOfYear());
+        dto.setWeekStartDate(weekly.getWeekStartDate());
+        dto.setWeekEndDate(weekly.getWeekEndDate());
         dto.setTotalPoints(weekly.getTotalPoints());
-        dto.setActivityCount(weekly.getActivityCount());
+        dto.setActivitiesCount(weekly.getActivitiesCount());
         return dto;
     }
 }
