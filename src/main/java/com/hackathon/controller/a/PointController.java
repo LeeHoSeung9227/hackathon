@@ -1,9 +1,7 @@
 package com.hackathon.controller.a;
 
 import com.hackathon.dto.a.PointHistoryDto;
-import com.hackathon.dto.a.ExchangeHistoryDto;
 import com.hackathon.service.a.PointHistoryService;
-import com.hackathon.service.a.ExchangeHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +17,6 @@ import java.util.stream.Collectors;
 public class PointController {
     
     private final PointHistoryService pointHistoryService;
-    private final ExchangeHistoryService exchangeHistoryService;
     
     // ===== 포인트 내역 =====
     
@@ -88,94 +85,9 @@ public class PointController {
         return ResponseEntity.badRequest().body(Map.of("error", "날짜 범위별 포인트 내역 조회는 지원하지 않습니다."));
     }
 
-    // ===== 교환 내역 =====
-    
-    /**
-     * 사용자 교환 내역 조회
-     */
-    @GetMapping("/user/{userId}/exchanges")
-    public ResponseEntity<Map<String, Object>> getUserExchangeHistory(@PathVariable Long userId) {
-        try {
-            List<ExchangeHistoryDto> exchanges = exchangeHistoryService.getExchangeHistoryByUserId(userId);
-            
-            List<ExchangeHistoryDto> exchangeDtos = exchanges.stream()
-                .map(this::convertToExchangeDto)
-                .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", exchangeDtos
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * 상품별 교환 내역 조회
-     */
-    @GetMapping("/exchanges/product/{productId}")
-    public ResponseEntity<Map<String, Object>> getProductExchangeHistory(@PathVariable Long productId) {
-        try {
-            List<ExchangeHistoryDto> exchanges = exchangeHistoryService.getExchangeHistoryByProductId(productId);
-            
-            List<ExchangeHistoryDto> exchangeDtos = exchanges.stream()
-                .map(this::convertToExchangeDto)
-                .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", exchangeDtos
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * 사용자별 상품별 교환 내역 조회
-     */
-    @GetMapping("/user/{userId}/exchanges/product/{productId}")
-    public ResponseEntity<Map<String, Object>> getUserProductExchangeHistory(
-            @PathVariable Long userId, 
-            @PathVariable Long productId) {
-        try {
-            List<ExchangeHistoryDto> exchanges = exchangeHistoryService.getExchangeHistoryByUserIdAndProductId(userId, productId);
-            
-            List<ExchangeHistoryDto> exchangeDtos = exchanges.stream()
-                .map(this::convertToExchangeDto)
-                .collect(Collectors.toList());
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", exchangeDtos
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
-    }
-    
-    /**
-     * 날짜 범위별 교환 내역 조회
-     */
-    @GetMapping("/user/{userId}/exchanges/range")
-    public ResponseEntity<Map<String, Object>> getUserExchangeHistoryByDateRange(
-            @PathVariable Long userId,
-            @RequestParam String startDate,
-            @RequestParam String endDate) {
-        return ResponseEntity.badRequest().body(Map.of("error", "날짜 범위별 교환 내역 조회는 지원하지 않습니다."));
-    }
-
     // ===== DTO 변환 메서드 =====
     
     private PointHistoryDto convertToDto(PointHistoryDto dto) {
-        return dto; // 이미 DTO이므로 그대로 반환
-    }
-    
-    private ExchangeHistoryDto convertToExchangeDto(ExchangeHistoryDto dto) {
         return dto; // 이미 DTO이므로 그대로 반환
     }
 }

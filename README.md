@@ -53,64 +53,66 @@ src/main/java/com/hackathon/
 └── exception/          # 예외 처리
 ```
 
-## 👥 개발자 분담 현황
+## 👥 개발자 분담 현황 (원래 DB 스키마 기준)
 
 ### 🔴 A개발자 담당 영역
-**주요 책임**: 사용자 관리, 인증, 포인트 시스템, AI 분석 결과 관리
+**주요 책임**: 사용자 관리, 인증, 포인트 시스템, AI 분석 결과 관리, 사용자 선호도
 
 #### Controller
 - `AiController` - AI 분석 결과 및 이미지 관리
 - `AuthController` - 로그인/회원가입 인증
-- `PointController` - 포인트 내역 및 교환 관리
+- `PointController` - 포인트 내역 관리 (교환 내역 제거됨)
 - `UserController` - 사용자 정보 및 랭킹 관리
+- `UserPreferencesController` - 사용자 선호도 관리 (새로 추가!)
 
 #### Service
 - `AiResultService` - AI 분석 결과 처리
 - `AuthLoginService` - 로그인 세션 관리
-- `ExchangeHistoryService` - 포인트 교환 내역
 - `ImageService` - 이미지 파일 관리
 - `PointHistoryService` - 포인트 적립/차감 내역
 - `RankingService` - 사용자 랭킹 관리
 - `SignupRequestService` - 회원가입 요청 처리
 - `UserService` - 사용자 정보 관리
+- `UserPreferencesService` - 사용자 선호도 처리 (새로 추가!)
 
 #### Repository
 - `AiResultRepository` - AI 분석 결과 저장소
 - `AuthLoginRepository` - 로그인 세션 저장소
-- `ExchangeHistoryRepository` - 교환 내역 저장소
 - `ImageRepository` - 이미지 메타데이터 저장소
 - `PointHistoryRepository` - 포인트 내역 저장소
 - `RankingRepository` - 랭킹 데이터 저장소
 - `SignupRequestRepository` - 회원가입 요청 저장소
 - `UserRepository` - 사용자 정보 저장소
+- `UserPreferencesRepository` - 사용자 선호도 저장소 (새로 추가!)
 
 #### Entity
 - `AiResult` - AI 분석 결과
 - `AuthLogin` - 로그인 세션
-- `ExchangeHistory` - 포인트 교환 내역
 - `Image` - 이미지 메타데이터
 - `PointHistory` - 포인트 적립/차감 내역
 - `Ranking` - 사용자 랭킹
 - `SignupRequest` - 회원가입 요청
 - `User` - 사용자 정보
+- `UserPreferences` - 사용자 선호도 (새로 추가!)
 
 #### DTO
 - `AiResultDto` - AI 분석 결과 전송 객체
 - `AuthLoginDto` - 로그인 정보 전송 객체
-- `ExchangeHistoryDto` - 교환 내역 전송 객체
 - `ImageDto` - 이미지 정보 전송 객체
 - `PointHistoryDto` - 포인트 내역 전송 객체
 - `RankingDto` - 랭킹 정보 전송 객체
 - `SignupRequestDto` - 회원가입 요청 전송 객체
 - `UserDto` - 사용자 정보 전송 객체
+- `UserPreferencesDto` - 사용자 선호도 전송 객체 (새로 추가!)
 
 ### 🔵 B개발자 담당 영역
-**주요 책임**: 상품 관리, 주문 시스템, 활동 기록, 뱃지 시스템
+**주요 책임**: 상품 관리, 주문 시스템, 활동 기록, 뱃지 시스템, 교환 내역
 
 #### Controller
 - `ActivityController` - 사용자 활동 기록 관리
 - `BadgeController` - 뱃지 시스템 관리
 - `ProductController` - 상품 및 주문 관리
+- `ExchangeController` - 교환 내역 관리 (A에서 이동!)
 
 #### Service
 - `ActivityHistoryService` - 활동 기록 처리
@@ -120,6 +122,7 @@ src/main/java/com/hackathon/
 - `ProductService` - 상품 관리
 - `UserBadgeService` - 사용자 뱃지 관리
 - `WeeklyActivityService` - 주간 활동 통계
+- `ExchangeHistoryService` - 교환 내역 처리 (A에서 이동!)
 
 #### Repository
 - `ActivityHistoryRepository` - 활동 기록 저장소
@@ -129,6 +132,7 @@ src/main/java/com/hackathon/
 - `ProductRepository` - 상품 정보 저장소
 - `UserBadgeRepository` - 사용자 뱃지 저장소
 - `WeeklyActivityRepository` - 주간 활동 저장소
+- `ExchangeHistoryRepository` - 교환 내역 저장소 (A에서 이동!)
 
 #### Entity
 - `ActivityHistory` - 사용자 활동 기록
@@ -139,6 +143,7 @@ src/main/java/com/hackathon/
 - `Product` - 상품 정보
 - `UserBadge` - 사용자 뱃지 보유 현황
 - `WeeklyActivity` - 주간 활동 통계
+- `ExchangeHistory` - 교환 내역 (A에서 이동!)
 
 #### DTO
 - `ActivityHistoryDto` - 활동 기록 전송 객체
@@ -147,6 +152,7 @@ src/main/java/com/hackathon/
 - `OrderDto` - 주문 정보 전송 객체
 - `ProductDto` - 상품 정보 전송 객체
 - `WeeklyActivityDto` - 주간 활동 전송 객체
+- `ExchangeHistoryDto` - 교환 내역 전송 객체 (A에서 이동!)
 
 ### 🟡 공통 영역
 **주요 책임**: 폐기물 기록, AI 모델 통합, 메인 대시보드
@@ -170,55 +176,75 @@ src/main/java/com/hackathon/
 #### DTO
 - `WasteRecordDto` - 폐기물 기록 전송 객체
 
-## 🗄️ 데이터베이스 스키마 통합 현황
+## 🗄️ 데이터베이스 스키마 통합 현황 (원래 스키마 기준)
 
 ### 📊 A개발자 담당 테이블
-| 테이블명 | 설명 | 주요 필드 |
-|---------|------|-----------|
-| `users` | 사용자 정보 | id, username, email, password, level, points_total, college, campus |
-| `auth_login` | 로그인 세션 | id, userId, token, expiresAt |
-| `signup_requests` | 회원가입 요청 | id, username, email, password, name, college, campus |
-| `ai_results` | AI 분석 결과 | id, imageId, userId, wasteType, confidence, resultData |
-| `images` | 이미지 메타데이터 | id, userId, imageUrl, fileName, contentType, fileSize |
-| `point_history` | 포인트 내역 | id, userId, type, points, description |
-| `exchange_history` | 포인트 교환 내역 | id, userId, productName, quantity, totalAmount |
-| `rankings` | 사용자 랭킹 | id, userId, category, scope |
+| 테이블명 | 설명 | 주요 필드 | 상태 |
+|---------|------|-----------|------|
+| `users` | 사용자 정보 | id, username, email, password, level, points_total, college, campus | ✅ 구현됨 |
+| `auth_login` | 로그인 세션 | id, userId, token, expiresAt | ✅ 구현됨 |
+| `signup_requests` | 회원가입 요청 | id, username, email, password, name, college, campus | ✅ 구현됨 |
+| `ai_results` | AI 분석 결과 | id, imageId, userId, wasteType, confidence, resultData | ✅ 구현됨 |
+| `images` | 이미지 메타데이터 | id, userId, imageUrl, fileName, contentType, fileSize | ✅ 구현됨 |
+| `point_history` | 포인트 내역 | id, userId, type, points, description | ✅ 구현됨 |
+| `rankings` | 사용자 랭킹 | id, userId, category, scope | ✅ 구현됨 |
+| `user_preferences` | 사용자 선호도 | id, userId, preferenceType, preferenceValue | ✅ 새로 추가됨 |
 
 ### 📊 B개발자 담당 테이블
-| 테이블명 | 설명 | 주요 필드 |
-|---------|------|-----------|
-| `products` | 상품 정보 | id, name, description, price, pointsRequired, stockQuantity |
-| `orders` | 주문 정보 | id, userId, status, totalAmount, totalPoints |
-| `order_items` | 주문 상품 항목 | id, orderId, productId, productName, quantity, unitPrice |
-| `activity_history` | 활동 기록 | id, userId, activityType, pointsEarned, description |
-| `daily_activity` | 일간 활동 통계 | id, userId, activityDate, totalPoints, activitiesCount |
-| `weekly_activity` | 주간 활동 통계 | id, userId, weekStartDate, weekEndDate, totalPoints, activitiesCount |
-| `badges` | 뱃지 정보 | id, name, description, imageUrl, pointsRequired, category |
-| `user_badges` | 사용자 뱃지 보유 현황 | id, userId, badgeId, earnedAt |
+| 테이블명 | 설명 | 주요 필드 | 상태 |
+|---------|------|-----------|------|
+| `products` | 상품 정보 | id, name, description, price, pointsRequired, stockQuantity | ✅ 구현됨 |
+| `orders` | 주문 정보 | id, userId, status, totalAmount, totalPoints | ✅ 구현됨 (원래 스키마에 없었음) |
+| `order_items` | 주문 상품 항목 | id, orderId, productId, productName, quantity, unitPrice | ✅ 구현됨 (원래 스키마에 없었음) |
+| `activity_history` | 활동 기록 | id, userId, activityType, pointsEarned, description | ✅ 구현됨 |
+| `daily_activity` | 일간 활동 통계 | id, userId, activityDate, totalPoints, activitiesCount | ✅ 구현됨 |
+| `weekly_activity` | 주간 활동 통계 | id, userId, weekStartDate, weekEndDate, totalPoints, activitiesCount | ✅ 구현됨 |
+| `badges` | 뱃지 정보 | id, name, description, imageUrl, pointsRequired, category | ✅ 구현됨 |
+| `user_badges` | 사용자 뱃지 보유 현황 | id, userId, badgeId, earnedAt | ✅ 구현됨 |
+| `exchange_history` | 교환 내역 | id, userId, productName, quantity, totalAmount | ✅ A에서 B로 이동됨 |
 
 ### 📊 공통 테이블
-| 테이블명 | 설명 | 주요 필드 |
-|---------|------|-----------|
-| `waste_records` | 폐기물 분리수거 기록 | id, userId, wasteType, points, imageUrl |
+| 테이블명 | 설명 | 주요 필드 | 상태 |
+|---------|------|-----------|------|
+| `waste_records` | 폐기물 분리수거 기록 | id, userId, wasteType, points, imageUrl | ✅ 구현됨 |
 
 ## 🔄 API 엔드포인트 구조
 
 ### A개발자 API (`/api/*`)
 - **AI 분석**: `/api/ai/*` - 이미지 분석, AI 결과 조회
 - **인증**: `/api/auth/*` - 로그인, 회원가입
-- **포인트**: `/api/points/*` - 포인트 내역, 교환
+- **포인트**: `/api/points/*` - 포인트 내역 (교환 내역 제거됨)
 - **사용자**: `/api/users/*` - 사용자 정보, 랭킹
+- **사용자 선호도**: `/api/user-preferences/*` - 사용자 선호도 관리 (새로 추가!)
 
 ### B개발자 API (`/api/*`)
 - **활동**: `/api/activity/*` - 활동 기록, 통계
 - **뱃지**: `/api/badges/*` - 뱃지 관리
 - **상품**: `/api/products/*` - 상품, 주문 관리
+- **교환 내역**: `/api/exchanges/*` - 교환 내역 관리 (A에서 이동!)
 
 ### 공통 API (`/api/*`)
 - **메인**: `/api/main/*` - 대시보드
 - **AI 모델**: `/api/taco/*` - TACO 모델 통합
 - **카메라**: `/api/camera/*` - 카메라 기능
 - **홈**: `/api/home/*` - 홈 화면
+
+## 📝 주요 변경사항
+
+### ✅ **수정 완료된 항목**
+1. **UserPreferences 추가**: A개발자 영역에 사용자 선호도 시스템 완전 구현
+2. **ExchangeHistory 이동**: A개발자 영역에서 B개발자 영역으로 완전 이동
+3. **PointController 정리**: 교환 내역 관련 코드 제거, 포인트 내역만 담당
+4. **ExchangeController 생성**: B개발자 영역에 교환 내역 전용 컨트롤러 생성
+
+### 🔄 **변경된 API 경로**
+- **기존**: `/api/points/exchanges/*` (A개발자)
+- **변경 후**: `/api/exchanges/*` (B개발자)
+
+### 📊 **최종 파일 분배**
+- **A개발자**: 8개 엔티티, 8개 DTO, 8개 Repository, 8개 Service, 5개 Controller
+- **B개발자**: 9개 엔티티, 7개 DTO, 8개 Repository, 8개 Service, 4개 Controller
+- **공통**: 1개 엔티티, 1개 DTO, 1개 Repository, 2개 Service, 4개 Controller
 
 ## 🚀 실행 방법
 
@@ -334,8 +360,8 @@ npm test
 ## 📞 연락처 및 지원
 
 ### 개발팀
-- **A개발자**: 사용자 관리, 인증, 포인트 시스템
-- **B개발자**: 상품 관리, 주문, 활동 기록, 뱃지
+- **A개발자**: 사용자 관리, 인증, 포인트 시스템, AI 분석, 사용자 선호도
+- **B개발자**: 상품 관리, 주문, 활동 기록, 뱃지, 교환 내역
 
 ### 이슈 리포트
 - GitHub Issues 사용
@@ -344,4 +370,4 @@ npm test
 ---
 
 **마지막 업데이트**: 2024년 12월
-**버전**: 1.0.0
+**버전**: 1.1.0 (원래 DB 스키마 기준으로 수정 완료)

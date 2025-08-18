@@ -2,13 +2,12 @@ package com.hackathon.entity.a;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "exchange_history")
+@Table(name = "user_preferences")
 @Data
-public class ExchangeHistory {
+public class UserPreferences {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -17,19 +16,10 @@ public class ExchangeHistory {
     private Long userId;
     
     @Column(nullable = false)
-    private Long productId;
+    private String preferenceType;
     
-    @Column(nullable = false)
-    private String productName;
-    
-    @Column(nullable = false)
-    private Integer quantity;
-    
-    @Column(nullable = false)
-    private BigDecimal totalAmount;
-    
-    @Column(nullable = false)
-    private Integer pointsUsed;
+    @Column(columnDefinition = "TEXT")
+    private String preferenceValue;
     
     @Column(nullable = false)
     private LocalDateTime createdAt;
