@@ -1,4 +1,4 @@
-package com.hackathon.controller;
+package com.hackathon.controller.b;
 
 import com.hackathon.dto.ProductDto;
 import com.hackathon.dto.OrderDto;

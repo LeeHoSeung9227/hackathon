@@ -1,4 +1,4 @@
-package com.hackathon.controller;
+package com.hackathon.controller.a;
 
 import com.hackathon.dto.PointHistoryDto;
 import com.hackathon.dto.ExchangeHistoryDto;

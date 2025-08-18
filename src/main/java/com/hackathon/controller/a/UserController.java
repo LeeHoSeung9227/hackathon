@@ -1,4 +1,4 @@
-package com.hackathon.controller;
+package com.hackathon.controller.a;
 
 import com.hackathon.dto.UserDto;
 import com.hackathon.dto.RankingDto;

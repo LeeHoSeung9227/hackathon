@@ -1,4 +1,4 @@
-package com.hackathon.controller;
+package com.hackathon.controller.b;
 
 import com.hackathon.dto.ActivityHistoryDto;
 import com.hackathon.dto.DailyActivityDto;
