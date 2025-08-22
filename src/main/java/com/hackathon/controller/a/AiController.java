@@ -2,29 +2,150 @@ package com.hackathon.controller.a;
 
 import com.hackathon.dto.a.AiResultDto;
 import com.hackathon.dto.a.ImageDto;
+import com.hackathon.dto.a.ImageAnalysisResult;
 import com.hackathon.entity.a.AiResult;
 import com.hackathon.entity.a.Image;
+import com.hackathon.entity.a.PointHistory;
 import com.hackathon.repository.a.AiResultRepository;
 import com.hackathon.repository.a.ImageRepository;
+import com.hackathon.repository.a.PointHistoryRepository;
+import com.hackathon.service.a.ChatGptImageAnalysisService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 
+@Slf4j
+@Component
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "*", allowCredentials = "false")
 public class AiController {
     
     private final AiResultRepository aiResultRepository;
     private final ImageRepository imageRepository;
+    private final ChatGptImageAnalysisService chatGptImageAnalysisService;
+    private final PointHistoryRepository pointHistoryRepository;
     
-    public AiController(AiResultRepository aiResultRepository, ImageRepository imageRepository) {
+    public AiController(AiResultRepository aiResultRepository, ImageRepository imageRepository, ChatGptImageAnalysisService chatGptImageAnalysisService, PointHistoryRepository pointHistoryRepository) {
         this.aiResultRepository = aiResultRepository;
         this.imageRepository = imageRepository;
+        this.chatGptImageAnalysisService = chatGptImageAnalysisService;
+        this.pointHistoryRepository = pointHistoryRepository;
+        
+        // 의존성 주입 상태 확인
+        log.info("=== AiController 생성자 실행 ===");
+        log.info("aiResultRepository: {}", aiResultRepository != null ? "주입됨" : "주입실패");
+        log.info("imageRepository: {}", imageRepository != null ? "주입됨" : "주입실패");
+        log.info("chatGptImageAnalysisService: {}", chatGptImageAnalysisService != null ? "주입됨" : "주입실패");
+        log.info("=== AiController 생성자 완료 ===");
+    }
+    
+    /**
+     * 컨트롤러 테스트용 엔드포인트
+     */
+    @GetMapping("/test")
+    public ResponseEntity<String> testController() {
+        log.info("=== GET /api/ai/test 엔드포인트 호출됨 ===");
+        return ResponseEntity.ok("AiController 정상 작동 중!");
+    }
+    
+    /**
+     * POST 요청 테스트용 엔드포인트
+     */
+    @PostMapping("/test-post")
+    public ResponseEntity<String> testPostController() {
+        log.info("=== POST /api/ai/test-post 엔드포인트 호출됨 ===");
+        return ResponseEntity.ok("AiController POST 요청 정상 작동 중!");
+    }
+    
+    /**
+     * 간단한 POST 테스트 엔드포인트 (파라미터 없음)
+     */
+    @PostMapping("/simple-test")
+    public ResponseEntity<String> simplePostTest() {
+        log.info("=== POST /api/ai/simple-test 엔드포인트 호출됨 ===");
+        return ResponseEntity.ok("간단한 POST 요청 성공!");
+    }
+    
+    /**
+     * ChatGPT를 사용한 폐기물 이미지 분석
+     */
+    @PostMapping("/analyze")
+    public ResponseEntity<ImageAnalysisResult> analyzeWasteImageWithChatGpt(@RequestParam("image") MultipartFile imageFile) {
+        log.info("=== POST /api/ai/analyze 엔드포인트 호출됨 ===");
+        log.info("이미지 파일명: {}", imageFile.getOriginalFilename());
+        log.info("이미지 크기: {} bytes", imageFile.getSize());
+        log.info("이미지 타입: {}", imageFile.getContentType());
+        
+        try {
+            if (imageFile.isEmpty()) {
+                log.warn("❌ 이미지 파일이 비어있음");
+                return ResponseEntity.badRequest()
+                    .body(ImageAnalysisResult.builder()
+                        .classification("파일오류")
+                        .reason("이미지 파일이 비어있습니다")
+                        .pointsEarned(0)
+                        .wasteType("UNKNOWN")
+                        .isRecyclable(false)
+                        .build());
+            }
+            
+            log.info("✅ 이미지 파일 검증 완료");
+            log.info("ChatGptImageAnalysisService 주입 확인: {}", chatGptImageAnalysisService != null ? "성공" : "실패");
+            
+            byte[] imageBytes = imageFile.getBytes();
+            log.info("✅ 이미지 바이트 배열 변환 완료: {} bytes", imageBytes.length);
+            
+            log.info("🚀 ChatGPT API 호출 시작");
+            ImageAnalysisResult result = chatGptImageAnalysisService.analyzeImage(imageBytes);
+            log.info("✅ ChatGPT API 호출 완료: {}", result);
+            
+            // 포인트 히스토리에 저장 (10점을 받았을 때만)
+            if (result.getPointsEarned() == 10) {
+                try {
+                    PointHistory pointHistory = new PointHistory();
+                    pointHistory.setUserId(1L); // 임시 사용자 ID (나중에 실제 로그인된 사용자 ID로 변경)
+                    pointHistory.setType("AI_ANALYSIS");
+                    pointHistory.setPoints(10); // 항상 10점
+                    pointHistory.setDescription(
+                        String.format("%s 분리수거로 10점 획득 (%s)", 
+                            result.getWasteType(), 
+                            result.getReason())
+                    );
+                    pointHistory.setCreatedAt(LocalDateTime.now());
+                    pointHistory.setUpdatedAt(LocalDateTime.now());
+                    
+                    pointHistoryRepository.save(pointHistory);
+                    log.info("✅ 포인트 히스토리 저장 완료: 분리수거로 10점 획득");
+                } catch (Exception e) {
+                    log.warn("⚠️ 포인트 히스토리 저장 실패: {}", e.getMessage());
+                }
+            }
+            
+            return ResponseEntity.ok(result);
+            
+        } catch (Exception e) {
+            log.error("❌ ChatGPT 이미지 분석 중 오류 발생", e);
+            log.error("오류 타입: {}", e.getClass().getSimpleName());
+            log.error("오류 메시지: {}", e.getMessage());
+            
+            return ResponseEntity.internalServerError()
+                .body(ImageAnalysisResult.builder()
+                    .classification("분석실패")
+                    .reason("서버 오류: " + e.getMessage())
+                    .pointsEarned(0)
+                    .wasteType("UNKNOWN")
+                    .isRecyclable(false)
+                    .build());
+        }
     }
     
     // ===== AI 분석 결과 =====
