@@ -26,7 +26,6 @@ import org.springframework.stereotype.Component;
 @Component
 @RestController
 @RequestMapping("/api/ai")
-@CrossOrigin(origins = "*", allowCredentials = "false")
 public class AiController {
     
     private final AiResultService aiResultService;
