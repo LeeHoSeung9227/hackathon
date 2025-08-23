@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>전체 API 테스트 페이지</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        .api-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .api-section h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fafafa;
+        }
+        .test-button {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+        .test-button:hover {
+            background: #5a6fd8;
+        }
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result-box {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .success {
+            border-left-color: #28a745;
+            background-color: #d4edda;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+        .input-group {
+            margin: 10px 0;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .input-group input, .input-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+        .summary {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            min-width: 200px;
+        }
+        .summary h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background-color: #28a745; }
+        .status-error { background-color: #dc3545; }
+        .status-pending { background-color: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 전체 API 테스트 도구</h1>
+        <p>모든 API 엔드포인트를 체계적으로 테스트합니다</p>
+    </div>
+
+    <div class="summary">
+        <h3>📊 테스트 현황</h3>
+        <div id="test-summary">
+            <div>✅ 성공: <span id="success-count">0</span></div>
+            <div>❌ 실패: <span id="error-count">0</span></div>
+            <div>⏳ 대기: <span id="pending-count">0</span></div>
+        </div>
+    </div>
+
+    <!-- 1. User API 테스트 -->
+    <div class="api-section">
+        <h2>👤 User API</h2>
+        
+        <div class="test-item">
+            <h3>GET /api/users - 모든 사용자 조회</h3>
+            <button class="test-button" onclick="testAPI('GET', '/api/users', null, 'users-all')">테스트 실행</button>
+            <div id="users-all" class="result-box"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>GET /api/users/{id} - 특정 사용자 조회</h3>
+            <div class="input-group">
+                <label for="user-id">사용자 ID:</label>
+                <input type="number" id="user-id" value="1" min="1">
+            </div>
+            <button class="test-button" onclick="testUserById()">테스트 실행</button>
+            <div id="users-by-id" class="result-box"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>GET /api/users/search - 이름으로 사용자 검색 (새로 추가)</h3>
+            <div class="input-group">
+                <label for="search-name">검색할 이름:</label>
+                <input type="text" id="search-name" value="설호" placeholder="사용자 이름 입력">
+            </div>
+            <button class="test-button" onclick="testUserSearch()">테스트 실행</button>
+            <div id="users-search" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- 2. Ranking API 테스트 -->
+    <div class="api-section">
+        <h2>🏆 Ranking API</h2>
+        
+        <div class="test-item">
+            <h3>GET /api/rankings/individual/top - 개인 랭킹 Top N 조회 (새로 추가)</h3>
+            <div class="input-group">
+                <label for="individual-scope">스코프:</label>
+                <select id="individual-scope">
+                    <option value="TOTAL">TOTAL</option>
+                    <option value="DAILY">DAILY</option>
+                    <option value="WEEKLY">WEEKLY</option>
+                    <option value="MONTHLY">MONTHLY</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="individual-limit">제한:</label>
+                <select id="individual-limit">
+                    <option value="30">30</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testIndividualRanking()">테스트 실행</button>
+            <div id="ranking-individual" class="result-box"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>GET /api/rankings/college/top - 단과대 랭킹 Top N 조회 (새로 추가)</h3>
+            <div class="input-group">
+                <label for="college-scope">스코프:</label>
+                <select id="college-scope">
+                    <option value="TOTAL">TOTAL</option>
+                    <option value="DAILY">DAILY</option>
+                    <option value="WEEKLY">WEEKLY</option>
+                    <option value="MONTHLY">MONTHLY</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="college-limit">제한:</label>
+                <select id="college-limit">
+                    <option value="30">30</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testCollegeRanking()">테스트 실행</button>
+            <div id="ranking-college" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- 3. Point API 테스트 -->
+    <div class="api-section">
+        <h2>💎 Point API</h2>
+        
+        <div class="test-item">
+            <h3>GET /api/points/user/{userId} - 사용자 포인트 내역 조회</h3>
+            <div class="input-group">
+                <label for="point-user-id">사용자 ID:</label>
+                <input type="number" id="point-user-id" value="1" min="1">
+            </div>
+            <button class="test-button" onclick="testUserPoints()">테스트 실행</button>
+            <div id="points-user" class="result-box"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>GET /api/points/user/{userId}/type/{changeType} - 타입별 포인트 내역 (개선됨)</h3>
+            <div class="input-group">
+                <label for="point-type-user-id">사용자 ID:</label>
+                <input type="number" id="point-type-user-id" value="1" min="1">
+            </div>
+            <div class="input-group">
+                <label for="point-change-type">변경 타입:</label>
+                <select id="point-change-type">
+                    <option value="EARNED">EARNED (적립)</option>
+                    <option value="SPENT">SPENT (사용)</option>
+                </select>
+            </div>
+            <button class="test-button" onclick="testUserPointsByType()">테스트 실행</button>
+            <div id="points-by-type" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- 4. AI API 테스트 -->
+    <div class="api-section">
+        <h2>🤖 AI API</h2>
+        
+        <div class="test-item">
+            <h3>GET /api/ai/user/{userId} - 사용자별 AI 분석 결과</h3>
+            <div class="input-group">
+                <label for="ai-user-id">사용자 ID:</label>
+                <input type="number" id="ai-user-id" value="1" min="1">
+            </div>
+            <button class="test-button" onclick="testAIByUser()">테스트 실행</button>
+            <div id="ai-user" class="result-box"></div>
+        </div>
+
+        <div class="test-item">
+            <h3>GET /api/ai/images/user/{userId} - 사용자 업로드 이미지 목록</h3>
+            <div class="input-group">
+                <label for="ai-images-user-id">사용자 ID:</label>
+                <input type="number" id="ai-images-user-id" value="1" min="1">
+            </div>
+            <button class="test-button" onclick="testAIImagesByUser()">테스트 실행</button>
+            <div id="ai-images-user" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- 5. Auth API 테스트 -->
+    <div class="api-section">
+        <h2>🔐 Auth API</h2>
+        
+        <div class="test-item">
+            <h3>GET /api/auth/signup/all - 모든 가입 신청 조회</h3>
+            <button class="test-button" onclick="testAPI('GET', '/api/auth/signup/all', null, 'auth-signup-all')">테스트 실행</button>
+            <div id="auth-signup-all" class="result-box"></div>
+        </div>
+    </div>
+
+    <!-- 6. Main API 테스트 -->
+    <div class="api-section">
+        <h2>🏠 Main API</h2>
+        
+        <div class="test-item">
+            <h3>GET /api/main/dashboard/{userId} - 대시보드 정보</h3>
+            <div class="input-group">
+                <label for="dashboard-user-id">사용자 ID:</label>
+                <input type="number" id="dashboard-user-id" value="1" min="1">
+            </div>
+            <button class="test-button" onclick="testDashboard()">테스트 실행</button>
+            <div id="dashboard" class="result-box"></div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://43.203.226.243:8080';
+        let testResults = {
+            success: 0,
+            error: 0,
+            pending: 0
+        };
+
+        function updateSummary() {
+            document.getElementById('success-count').textContent = testResults.success;
+            document.getElementById('error-count').textContent = testResults.error;
+            document.getElementById('pending-count').textContent = testResults.pending;
+        }
+
+        async function testAPI(method, endpoint, body, resultElementId, params = {}) {
+            const resultElement = document.getElementById(resultElementId);
+            resultElement.textContent = '⏳ 테스트 실행 중...';
+            resultElement.className = 'result-box';
+            
+            try {
+                let url = BASE_URL + endpoint;
+                
+                // URL 파라미터 추가
+                if (Object.keys(params).length > 0) {
+                    const urlParams = new URLSearchParams(params);
+                    url += '?' + urlParams.toString();
+                }
+
+                const options = {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                };
+
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                const response = await fetch(url, options);
+                const data = await response.json();
+                
+                const result = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    url: url,
+                    method: method,
+                    response: data
+                };
+
+                resultElement.textContent = JSON.stringify(result, null, 2);
+                
+                if (response.ok) {
+                    resultElement.classList.add('success');
+                    testResults.success++;
+                } else {
+                    resultElement.classList.add('error');
+                    testResults.error++;
+                }
+                
+            } catch (error) {
+                resultElement.textContent = `❌ 오류 발생: ${error.message}`;
+                resultElement.classList.add('error');
+                testResults.error++;
+            }
+            
+            updateSummary();
+        }
+
+        // 특정 테스트 함수들
+        function testUserById() {
+            const userId = document.getElementById('user-id').value;
+            testAPI('GET', `/api/users/${userId}`, null, 'users-by-id');
+        }
+
+        function testUserSearch() {
+            const name = document.getElementById('search-name').value;
+            testAPI('GET', '/api/users/search', null, 'users-search', { name: name });
+        }
+
+        function testIndividualRanking() {
+            const scope = document.getElementById('individual-scope').value;
+            const limit = document.getElementById('individual-limit').value;
+            testAPI('GET', '/api/rankings/individual/top', null, 'ranking-individual', 
+                   { scopeType: scope, limit: limit });
+        }
+
+        function testCollegeRanking() {
+            const scope = document.getElementById('college-scope').value;
+            const limit = document.getElementById('college-limit').value;
+            testAPI('GET', '/api/rankings/college/top', null, 'ranking-college', 
+                   { scopeType: scope, limit: limit });
+        }
+
+        function testUserPoints() {
+            const userId = document.getElementById('point-user-id').value;
+            testAPI('GET', `/api/points/user/${userId}`, null, 'points-user');
+        }
+
+        function testUserPointsByType() {
+            const userId = document.getElementById('point-type-user-id').value;
+            const changeType = document.getElementById('point-change-type').value;
+            testAPI('GET', `/api/points/user/${userId}/type/${changeType}`, null, 'points-by-type');
+        }
+
+        function testAIByUser() {
+            const userId = document.getElementById('ai-user-id').value;
+            testAPI('GET', `/api/ai/user/${userId}`, null, 'ai-user');
+        }
+
+        function testAIImagesByUser() {
+            const userId = document.getElementById('ai-images-user-id').value;
+            testAPI('GET', `/api/ai/images/user/${userId}`, null, 'ai-images-user');
+        }
+
+        function testDashboard() {
+            const userId = document.getElementById('dashboard-user-id').value;
+            testAPI('GET', `/api/main/dashboard/${userId}`, null, 'dashboard');
+        }
+
+        // 페이지 로드 시 초기 설정
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSummary();
+        });
+    </script>
+</body>
+</html>
