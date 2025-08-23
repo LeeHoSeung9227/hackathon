@@ -1,63 +1,53 @@
-name: CI/CD Pipeline - Docker Hub
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["main"]
-
-concurrency:
-  group: deploy
-  cancel-in-progress: true
+    branches:
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 코드 가져오기
+      # 1. 레포지토리 체크아웃
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. JDK 설치
-      - name: Set up JDK
-        uses: actions/setup-java@v3
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      # 3. Maven 빌드 (JAR 생성)
+      # 2. Maven 빌드 (테스트 제외)
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # 4. 빌드 확인
-      - name: Check JAR
-        run: ls -l target/
+      # 3. Docker 로그인 (DockerHub)
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # 5. Docker Hub 로그인
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
-      # 6. Docker 이미지 빌드 & 푸시
-      - name: Build and push Docker image
+      # 4. Docker 이미지 빌드
+      - name: Build Docker image
         run: |
           IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hackathon-server:latest
           docker build -t $IMAGE_NAME .
+
+      # 5. Docker 이미지 푸시
+      - name: Push Docker image
+        run: |
+          IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hackathon-server:latest
           docker push $IMAGE_NAME
 
-      # 7. EC2 서버에 배포
-      - name: Deploy to EC2 Server
-        uses: appleboy/ssh-action@v1.0.0
+      # 6. SSH로 서버 접속 후 Docker 컨테이너 재시작
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
           script: |
-            IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hackathon-server:latest
-            echo "=== Pulling latest image ==="
-            docker pull $IMAGE_NAME
-            echo "=== Stopping existing container if exists ==="
+            cd /home/ec2-user/hackathon
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/hackathon-server:latest
             docker stop hackathon-server || true
             docker rm hackathon-server || true
-            echo "=== Running new container ==="
-            docker run -d --name hackathon-server -p 8080:8080 $IMAGE_NAME
-            echo "=== Container status ==="
-            docker ps
+            docker run -d --name hackathon-server -p 8080:8080 ${{ secrets.DOCKERHUB_USERNAME }}/hackathon-server:latest
