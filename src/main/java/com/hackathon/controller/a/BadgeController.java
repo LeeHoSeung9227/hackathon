@@ -3,6 +3,8 @@ package com.hackathon.controller.a;
 import com.hackathon.dto.b.BadgeDto;
 import com.hackathon.entity.b.Badge;
 import com.hackathon.repository.b.BadgeRepository;
+import com.hackathon.service.a.UserService;
+import com.hackathon.service.a.PointHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,8 @@ import java.util.stream.Collectors;
 public class BadgeController {
 
     private final BadgeRepository badgeRepository;
+    private final UserService userService;
+    private final PointHistoryService pointHistoryService;
 
     /**
      * 모든 뱃지 조회
@@ -226,7 +230,7 @@ public class BadgeController {
     }
 
     /**
-     * 뱃지 획득 (포인트 차감 후 뱃지 부여)
+     * 뱃지 획득 (포인트 적립 후 뱃지 부여)
      */
     @PostMapping("/earn")
     public ResponseEntity<Map<String, Object>> earnBadge(@RequestBody Map<String, Object> request) {
@@ -243,16 +247,25 @@ public class BadgeController {
             
             Badge targetBadge = badge.get();
             
-            // 사용자 정보 조회 (포인트 확인용)
-            // TODO: UserService 주입하여 포인트 확인 및 차감 로직 구현 필요
-            // 현재는 임시로 성공 응답만 반환
+            // 뱃지 포인트 적립
+            int pointsToEarn = targetBadge.getPointsRequired();
+            
+            // 포인트 히스토리 생성
+            pointHistoryService.createPointHistory(userId, "BADGE_EARNED", pointsToEarn, 
+                "뱃지 획득: " + targetBadge.getName());
+            
+            // 사용자 총 포인트 업데이트
+            userService.updateUserPoints(userId, pointsToEarn);
+            
+            // TODO: UserBadge 테이블에 뱃지 획득 기록 저장 필요
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "뱃지를 획득했습니다!",
                 "data", Map.of(
                     "badgeName", targetBadge.getName(),
-                    "pointsRequired", targetBadge.getPointsRequired()
+                    "pointsEarned", pointsToEarn,
+                    "description", targetBadge.getDescription()
                 )
             ));
         } catch (Exception e) {
