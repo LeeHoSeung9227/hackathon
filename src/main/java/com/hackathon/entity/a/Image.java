@@ -15,7 +15,7 @@ public class Image {
     @Column(nullable = false)
     private Long userId;
     
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String imageUrl;
     
     @Column(nullable = false)
@@ -26,6 +26,10 @@ public class Image {
     
     @Column(nullable = false)
     private Long fileSize;
+    
+    @Lob
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] imageData;
     
     @Column(nullable = false)
     private LocalDateTime createdAt;

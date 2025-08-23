@@ -81,8 +81,11 @@ public class AiController {
      * ChatGPT를 사용한 폐기물 이미지 분석
      */
     @PostMapping("/analyze")
-    public ResponseEntity<ImageAnalysisResult> analyzeWasteImageWithChatGpt(@RequestParam("image") MultipartFile imageFile) {
+    public ResponseEntity<ImageAnalysisResult> analyzeWasteImageWithChatGpt(
+            @RequestParam("image") MultipartFile imageFile,
+            @RequestParam("userId") String userId) {
         log.info("=== POST /api/ai/analyze 엔드포인트 호출됨 ===");
+        log.info("사용자 ID: {}", userId);
         log.info("이미지 파일명: {}", imageFile.getOriginalFilename());
         log.info("이미지 크기: {} bytes", imageFile.getSize());
         log.info("이미지 타입: {}", imageFile.getContentType());
@@ -110,11 +113,23 @@ public class AiController {
             ImageAnalysisResult result = chatGptImageAnalysisService.analyzeImage(imageBytes);
             log.info("✅ ChatGPT API 호출 완료: {}", result);
             
+            // 이미지를 먼저 저장
+            Image image = new Image();
+            image.setUserId(Long.parseLong(userId)); // 사용자 ID 설정
+            image.setFileName(imageFile.getOriginalFilename());
+            image.setContentType(imageFile.getContentType());
+            image.setFileSize(imageFile.getSize());
+            image.setImageData(imageBytes); // 실제 이미지 데이터 저장
+            
+            Image savedImage = imageRepository.save(image);
+            
+            log.info("✅ 이미지 저장 완료: ID={}, 파일명={}", savedImage.getId(), savedImage.getFileName());
+            
             // 포인트 히스토리에 저장 (10점을 받았을 때만)
             if (result.getPointsEarned() == 10) {
                 try {
                     PointHistory pointHistory = new PointHistory();
-                    pointHistory.setUserId(1L); // 임시 사용자 ID (나중에 실제 로그인된 사용자 ID로 변경)
+                    pointHistory.setUserId(Long.parseLong(userId)); // 전달받은 사용자 ID 사용
                     pointHistory.setType("AI_ANALYSIS");
                     pointHistory.setPoints(10); // 항상 10점
                     pointHistory.setDescription(
@@ -122,11 +137,12 @@ public class AiController {
                             result.getWasteType(), 
                             result.getReason())
                     );
+                    pointHistory.setImageId(savedImage.getId()); // 저장된 이미지 ID 연결
                     pointHistory.setCreatedAt(LocalDateTime.now());
                     pointHistory.setUpdatedAt(LocalDateTime.now());
                     
                     pointHistoryRepository.save(pointHistory);
-                    log.info("✅ 포인트 히스토리 저장 완료: 분리수거로 10점 획득");
+                    log.info("✅ 포인트 히스토리 저장 완료: 사용자 {} 분리수거로 10점 획득, 이미지ID={}", userId, savedImage.getId());
                 } catch (Exception e) {
                     log.warn("⚠️ 포인트 히스토리 저장 실패: {}", e.getMessage());
                 }
@@ -135,12 +151,12 @@ public class AiController {
             // WasteRecord에도 저장 (대시보드용)
             try {
                 wasteRecordService.createWasteRecord(
-                    1L, // 임시 사용자 ID
+                    Long.parseLong(userId), // 전달받은 사용자 ID 사용
                     result.getWasteType(),
                     result.getPointsEarned(),
-                    null // 이미지 URL은 나중에 추가
+                    "/api/images/" + savedImage.getId() // 저장된 이미지 URL
                 );
-                log.info("✅ WasteRecord 저장 완료: {}", result.getWasteType());
+                log.info("✅ WasteRecord 저장 완료: 사용자 {} - {}, 이미지URL={}", userId, result.getWasteType(), "/api/images/" + savedImage.getId());
             } catch (Exception e) {
                 log.warn("⚠️ WasteRecord 저장 실패: {}", e.getMessage());
             }
@@ -400,6 +416,7 @@ public class AiController {
                 .fileName(image.getFileName())
                 .contentType(image.getContentType())
                 .fileSize(image.getFileSize())
+                .imageData(image.getImageData())
                 .createdAt(image.getCreatedAt())
                 .updatedAt(image.getUpdatedAt())
                 .build();

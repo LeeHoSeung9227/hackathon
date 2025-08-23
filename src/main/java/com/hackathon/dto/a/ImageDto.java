@@ -17,6 +17,7 @@ public class ImageDto {
     private String fileName;
     private String contentType;
     private Long fileSize;
+    private byte[] imageData;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
