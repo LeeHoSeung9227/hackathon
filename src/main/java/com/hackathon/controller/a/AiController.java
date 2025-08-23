@@ -6,9 +6,9 @@ import com.hackathon.dto.a.ImageAnalysisResult;
 import com.hackathon.entity.a.AiResult;
 import com.hackathon.entity.a.Image;
 import com.hackathon.entity.a.PointHistory;
-import com.hackathon.repository.a.AiResultRepository;
 import com.hackathon.repository.a.ImageRepository;
 import com.hackathon.repository.a.PointHistoryRepository;
+import com.hackathon.service.a.AiResultService;
 import com.hackathon.service.a.ChatGptImageAnalysisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -29,20 +29,20 @@ import org.springframework.stereotype.Component;
 @CrossOrigin(origins = "*", allowCredentials = "false")
 public class AiController {
     
-    private final AiResultRepository aiResultRepository;
+    private final AiResultService aiResultService;
     private final ImageRepository imageRepository;
     private final ChatGptImageAnalysisService chatGptImageAnalysisService;
     private final PointHistoryRepository pointHistoryRepository;
     
-    public AiController(AiResultRepository aiResultRepository, ImageRepository imageRepository, ChatGptImageAnalysisService chatGptImageAnalysisService, PointHistoryRepository pointHistoryRepository) {
-        this.aiResultRepository = aiResultRepository;
+    public AiController(AiResultService aiResultService, ImageRepository imageRepository, ChatGptImageAnalysisService chatGptImageAnalysisService, PointHistoryRepository pointHistoryRepository) {
+        this.aiResultService = aiResultService;
         this.imageRepository = imageRepository;
         this.chatGptImageAnalysisService = chatGptImageAnalysisService;
         this.pointHistoryRepository = pointHistoryRepository;
         
         // 의존성 주입 상태 확인
         log.info("=== AiController 생성자 실행 ===");
-        log.info("aiResultRepository: {}", aiResultRepository != null ? "주입됨" : "주입실패");
+        log.info("aiResultService: {}", aiResultService != null ? "주입됨" : "주입실패");
         log.info("imageRepository: {}", imageRepository != null ? "주입됨" : "주입실패");
         log.info("chatGptImageAnalysisService: {}", chatGptImageAnalysisService != null ? "주입됨" : "주입실패");
         log.info("=== AiController 생성자 완료 ===");
@@ -156,13 +156,13 @@ public class AiController {
     @GetMapping("/image/{imagesId}")
     public ResponseEntity<Map<String, Object>> getAiResultByImage(@PathVariable Long imagesId) {
         try {
-            List<AiResult> aiResults = aiResultRepository.findByImageIdOrderByCreatedAtDesc(imagesId);
-            List<AiResultDto> aiResultDtos = aiResults.stream().map(this::convertToDto).collect(Collectors.toList());
+            List<AiResultDto> aiResultDtos = aiResultService.getAiResultsByImageId(imagesId);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", aiResultDtos
             ));
         } catch (Exception e) {
+            log.error("이미지별 AI 분석 결과 조회 중 오류 발생", e);
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
         }
@@ -174,17 +174,14 @@ public class AiController {
     @GetMapping("/user/{userId}")
     public ResponseEntity<Map<String, Object>> getUserAiResults(@PathVariable Long userId) {
         try {
-            List<AiResult> aiResults = aiResultRepository.findByUserIdOrderByCreatedAtDesc(userId);
-            
-            List<AiResultDto> aiResultDtos = aiResults.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+            List<AiResultDto> aiResultDtos = aiResultService.getAiResultsByUserId(userId);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", aiResultDtos
             ));
         } catch (Exception e) {
+            log.error("사용자별 AI 분석 결과 조회 중 오류 발생", e);
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
         }
@@ -196,17 +193,14 @@ public class AiController {
     @GetMapping("/material/{materialType}")
     public ResponseEntity<Map<String, Object>> getAiResultsByMaterialType(@PathVariable String materialType) {
         try {
-            List<AiResult> aiResults = aiResultRepository.findByWasteTypeOrderByCreatedAtDesc(materialType);
-            
-            List<AiResultDto> aiResultDtos = aiResults.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+            List<AiResultDto> aiResultDtos = aiResultService.getAiResultsByWasteType(materialType);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", aiResultDtos
             ));
         } catch (Exception e) {
+            log.error("재질 타입별 AI 분석 결과 조회 중 오류 발생", e);
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
         }
@@ -236,11 +230,7 @@ public class AiController {
             LocalDateTime start = LocalDateTime.parse(startDate);
             LocalDateTime end = LocalDateTime.parse(endDate);
             
-            List<AiResult> aiResults = aiResultRepository.findByCreatedAtBetween(start, end);
-            
-            List<AiResultDto> aiResultDtos = aiResults.stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+            List<AiResultDto> aiResultDtos = aiResultService.getAiResultsByDateRange(start, end);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -316,6 +306,7 @@ public class AiController {
                 "data", imageDtos
             ));
         } catch (Exception e) {
+            log.error("날짜 범위별 이미지 조회 중 오류 발생", e);
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
         }
@@ -341,6 +332,7 @@ public class AiController {
                 ));
             }
         } catch (Exception e) {
+            log.error("이미지 상세 정보 조회 중 오류 발생", e);
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
         }
@@ -349,28 +341,28 @@ public class AiController {
     // ===== DTO 변환 메서드 =====
     
     private AiResultDto convertToDto(AiResult aiResult) {
-        AiResultDto dto = new AiResultDto();
-        dto.setId(aiResult.getId());
-        dto.setImageId(aiResult.getImageId());
-        dto.setUserId(aiResult.getUserId());
-        dto.setWasteType(aiResult.getWasteType());
-        dto.setConfidence(aiResult.getConfidence());
-        dto.setResultData(aiResult.getResultData());
-        dto.setCreatedAt(aiResult.getCreatedAt());
-        dto.setUpdatedAt(aiResult.getUpdatedAt());
-        return dto;
+        return AiResultDto.builder()
+                .id(aiResult.getId())
+                .imageId(aiResult.getImageId())
+                .userId(aiResult.getUserId())
+                .wasteType(aiResult.getWasteType())
+                .confidence(aiResult.getConfidence())
+                .resultData(aiResult.getResultData())
+                .createdAt(aiResult.getCreatedAt())
+                .updatedAt(aiResult.getUpdatedAt())
+                .build();
     }
     
     private ImageDto convertToImageDto(Image image) {
-        ImageDto dto = new ImageDto();
-        dto.setId(image.getId());
-        dto.setUserId(image.getUserId());
-        dto.setImageUrl(image.getImageUrl());
-        dto.setFileName(image.getFileName());
-        dto.setContentType(image.getContentType());
-        dto.setFileSize(image.getFileSize());
-        dto.setCreatedAt(image.getCreatedAt());
-        dto.setUpdatedAt(image.getUpdatedAt());
-        return dto;
+        return ImageDto.builder()
+                .id(image.getId())
+                .userId(image.getUserId())
+                .imageUrl(image.getImageUrl())
+                .fileName(image.getFileName())
+                .contentType(image.getContentType())
+                .fileSize(image.getFileSize())
+                .createdAt(image.getCreatedAt())
+                .updatedAt(image.getUpdatedAt())
+                .build();
     }
 }

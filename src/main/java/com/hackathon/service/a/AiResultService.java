@@ -4,84 +4,99 @@ import com.hackathon.dto.a.AiResultDto;
 import com.hackathon.entity.a.AiResult;
 import com.hackathon.repository.a.AiResultRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class AiResultService {
     
     private final AiResultRepository aiResultRepository;
     
-    public AiResultDto createAiResult(Long userId, Long imageId, String wasteType, Double confidence, String resultData) {
-        AiResult result = new AiResult();
-        result.setUserId(userId);
-        result.setImageId(imageId);
-        result.setWasteType(wasteType);
-        result.setConfidence(confidence);
-        result.setResultData(resultData);
-        
-        AiResult savedResult = aiResultRepository.save(result);
-        return convertToDto(savedResult);
-    }
-    
-    public AiResultDto getAiResultById(Long id) {
-        AiResult result = aiResultRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("AI 결과를 찾을 수 없습니다: " + id));
-        return convertToDto(result);
-    }
-    
-    public List<AiResultDto> getAiResultsByUserId(Long userId) {
-        return aiResultRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-    
+    /**
+     * 이미지별 AI 분석 결과 조회
+     */
     public List<AiResultDto> getAiResultsByImageId(Long imageId) {
-        return aiResultRepository.findByImageIdOrderByCreatedAtDesc(imageId).stream()
+        log.info("이미지 ID {}의 AI 분석 결과 조회", imageId);
+        List<AiResult> aiResults = aiResultRepository.findByImageIdOrderByCreatedAtDesc(imageId);
+        return aiResults.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
     
+    /**
+     * 사용자별 AI 분석 결과 조회
+     */
+    public List<AiResultDto> getAiResultsByUserId(Long userId) {
+        log.info("사용자 ID {}의 AI 분석 결과 조회", userId);
+        List<AiResult> aiResults = aiResultRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return aiResults.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * 재질 타입별 AI 분석 결과 조회
+     */
     public List<AiResultDto> getAiResultsByWasteType(String wasteType) {
-        return aiResultRepository.findByWasteTypeOrderByCreatedAtDesc(wasteType).stream()
+        log.info("재질 타입 {}의 AI 분석 결과 조회", wasteType);
+        List<AiResult> aiResults = aiResultRepository.findByWasteTypeOrderByCreatedAtDesc(wasteType);
+        return aiResults.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
     
+    /**
+     * 기간별 AI 분석 결과 조회
+     */
     public List<AiResultDto> getAiResultsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return aiResultRepository.findByCreatedAtBetween(startDate, endDate).stream()
+        log.info("기간 {} ~ {}의 AI 분석 결과 조회", startDate, endDate);
+        List<AiResult> aiResults = aiResultRepository.findByCreatedAtBetween(startDate, endDate);
+        return aiResults.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
     
+    /**
+     * 사용자별 기간별 AI 분석 결과 조회
+     */
     public List<AiResultDto> getAiResultsByUserIdAndDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate) {
-        return aiResultRepository.findByUserIdAndCreatedAtBetween(userId, startDate, endDate).stream()
+        log.info("사용자 ID {}의 기간 {} ~ {} AI 분석 결과 조회", userId, startDate, endDate);
+        List<AiResult> aiResults = aiResultRepository.findByUserIdAndCreatedAtBetween(userId, startDate, endDate);
+        return aiResults.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
     
-    public void deleteAiResult(Long id) {
-        if (!aiResultRepository.existsById(id)) {
-            throw new RuntimeException("AI 결과를 찾을 수 없습니다: " + id);
-        }
-        aiResultRepository.deleteById(id);
+    /**
+     * AI 분석 결과 저장
+     */
+    @Transactional
+    public AiResult saveAiResult(AiResult aiResult) {
+        log.info("AI 분석 결과 저장: {}", aiResult);
+        return aiResultRepository.save(aiResult);
     }
     
-    private AiResultDto convertToDto(AiResult result) {
-        AiResultDto dto = new AiResultDto();
-        dto.setId(result.getId());
-        dto.setUserId(result.getUserId());
-        dto.setImageId(result.getImageId());
-        dto.setWasteType(result.getWasteType());
-        dto.setConfidence(result.getConfidence());
-        dto.setResultData(result.getResultData());
-        dto.setCreatedAt(result.getCreatedAt());
-        dto.setUpdatedAt(result.getUpdatedAt());
-        return dto;
+    /**
+     * Entity를 DTO로 변환
+     */
+    private AiResultDto convertToDto(AiResult aiResult) {
+        return AiResultDto.builder()
+                .id(aiResult.getId())
+                .userId(aiResult.getUserId())
+                .imageId(aiResult.getImageId())
+                .wasteType(aiResult.getWasteType())
+                .confidence(aiResult.getConfidence())
+                .resultData(aiResult.getResultData())
+                .createdAt(aiResult.getCreatedAt())
+                .updatedAt(aiResult.getUpdatedAt())
+                .build();
     }
 }
