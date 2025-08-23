@@ -161,7 +161,7 @@ public class PointController {
         try {
             List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByImageId(imagesId);
             
-            // �??�인??계산
+            // 총 포인트 계산
             int totalPoints = pointHistory.stream()
                 .mapToInt(PointHistoryDto::getPoints)
                 .sum();
@@ -206,7 +206,7 @@ public class PointController {
                     historyMap.put("createdAt", history.getCreatedAt());
                     historyMap.put("updatedAt", history.getUpdatedAt());
                     
-                    // ?��?지 ?�보가 ?�는 경우 추�?
+                                         // 이미지 정보가 있는 경우 추가
                     if (history.getImageId() != null) {
                         try {
                             var image = imageRepository.findById(history.getImageId());
@@ -221,14 +221,14 @@ public class PointController {
                                 historyMap.put("image", imageInfo);
                             }
                         } catch (Exception e) {
-                            log.warn("?��?지 조회 ?�패: {}", e.getMessage());
+                            log.warn("이미지조회: {}", e.getMessage());
                         }
                     }
                     
                     result.add(historyMap);
                 }
             } else {
-                // ?�정 ?�?�의 ?�인???�스?�리 조회
+                // 특정 타입의 포인트 히스토리 조회
                 List<PointHistory> histories = pointHistoryRepository.findByUserIdAndTypeOrderByCreatedAtDesc(userId, changeType);
                 
                 for (PointHistory history : histories) {
@@ -242,7 +242,7 @@ public class PointController {
                     historyMap.put("createdAt", history.getCreatedAt());
                     historyMap.put("updatedAt", history.getUpdatedAt());
                     
-                    // ?��?지 ?�보가 ?�는 경우 추�?
+                                         // 이미지 정보가 있는 경우 추가
                     if (history.getImageId() != null) {
                         try {
                             var image = imageRepository.findById(history.getImageId());
@@ -257,7 +257,7 @@ public class PointController {
                                 historyMap.put("image", imageInfo);
                             }
                         } catch (Exception e) {
-                            log.warn("?��?지 조회 ?�패: {}", e.getMessage());
+                                                         log.warn("이미지 조회 실패: {}", e.getMessage());
                         }
                     }
                     
@@ -268,25 +268,25 @@ public class PointController {
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
-            log.error("?�인???�스?�리 조회 ?�패: {}", e.getMessage());
+                         log.error("포인트 히스토리 조회 실패: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to retrieve point history: " + e.getMessage());
         }
     }
 
     /**
-     * ?�용???�합 ?�?�보???�보 조회 (총포?�트, ?�진, ?�립?�용, ?�간 ??
+
      */
     @GetMapping("/user/{userId}/dashboard/comprehensive")
     public ResponseEntity<Map<String, Object>> getUserComprehensiveDashboard(@PathVariable Long userId) {
         try {
-            // ?�용???�보 조회
+            // 사용자 정보 조회
             var user = userService.getUserById(userId);
             
-            // ?�인???�스?�리 조회
+            // 포인트 히스토리 조회
             List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByUserId(userId);
             
-            // ?�인??계산
+            // 포인트 계산
             int totalEarned = pointHistory.stream()
                 .filter(ph -> ph.getPoints() > 0)
                 .mapToInt(PointHistoryDto::getPoints)
@@ -299,7 +299,6 @@ public class PointController {
             
             int currentPoints = user.getPointsTotal();
             
-            // ?�세 ?�인???�립 ?�보 (?��?지, 뱃�?, ?�동 ?? - 모든 ?�???�시
             List<Map<String, Object>> detailedHistory = pointHistory.stream()
                 .map(ph -> {
                     Map<String, Object> detail = Map.of(
@@ -356,7 +355,7 @@ public class PointController {
     }
     
     /**
-     * ?�짜 범위�??�인???�역 조회
+     * 날짜 범위별 포인트 히스토리 조회
      */
     @GetMapping("/user/{userId}/range")
     public ResponseEntity<Map<String, Object>> getUserPointHistoryByDateRange(
@@ -364,16 +363,16 @@ public class PointController {
             @RequestParam String startDate,
             @RequestParam String endDate) {
         try {
-            // ?�짜 ?�싱 (간단??구현)
+            // 날짜 파싱 (간단한 구현)
             LocalDateTime start = LocalDateTime.parse(startDate + "T00:00:00");
             LocalDateTime end = LocalDateTime.parse(endDate + "T23:59:59");
             
-            // ?�인???�스?�리 조회 (기간�?
+            // 포인트 히스토리 조회 (기간별)
             List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByUserId(userId).stream()
                 .filter(ph -> ph.getCreatedAt().isAfter(start) && ph.getCreatedAt().isBefore(end))
                 .collect(Collectors.toList());
             
-            // �??�인??계산
+            // 총 포인트 계산
             int totalPoints = pointHistory.stream()
                 .mapToInt(PointHistoryDto::getPoints)
                 .sum();
@@ -384,65 +383,63 @@ public class PointController {
                     "userId", userId,
                     "startDate", startDate,
                     "endDate", endDate,
-                    "totalPoints", totalPoints,  // �??�인??추�?
-                    "history", pointHistory      // ?�세 ?�역
+                    "totalPoints", totalPoints, 
+                    "history", pointHistory      
                 )
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(Map.of("error", "?�짜 ?�식???�바르�? ?�습?�다. (YYYY-MM-DD ?�식)" + e.getMessage()));
+                .body(Map.of("error", "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD 형식)" + e.getMessage()));
         }
     }
 
-    // ===== DTO 변??메서??=====
+    // ===== DTO 변환 메서드 =====
     
     private PointHistoryDto convertToDto(PointHistoryDto dto) {
-        return dto; // ?��? DTO?��?�?그�?�?반환
+        return dto; 
     }
 
     private String getLevelName(int level) {
         switch (level) {
             case 1:
-                return "?�앗";
+                return "새싹";
             case 2:
-                return "?��? ?�싹";
+                return "잎새";
             case 3:
-                return "?�싹";
+                return "가지";
             case 4:
-                return "???�싹";
+                return "나무";
             case 5:
-                return "?�무";
+                return "큰나무";
             default:
-                return "?�앗";
+                return "새싹";
         }
     }
     
     private String getSourceType(String type, Long imageId) {
         if (imageId != null) {
-            return "?�진";
+            return "사진";
         } else if ("BADGE_EARNED".equals(type)) {
-            return "뱃�?";
+            return "뱃지";
         } else if ("MANUAL_ADD".equals(type)) {
-            return "?�동";
+            return "수동";
         } else {
-            return "기�?";
+            return "기타";
         }
     }
     
-    // ===== ?�품 조회 API (?�스?�용) =====
+
     
-    /**
-     * 모든 ?�품 조회
-     */
+
     @GetMapping("/products")
     public ResponseEntity<Map<String, Object>> getAllProducts() {
         try {
-            // ?�시�??�드코딩???�품 ?�이??반환 (?�스?�용)
+            // Hardcoded product list for testing
             List<Map<String, Object>> products = List.of(
                 Map.of(
                     "id", 1L,
-                    "name", "?�코�?,
-                    "description", "친환�??�활???�코�?,
+                    "name", "Eco Bag",
+                    "description", "Eco-friendly reusable bag",
                     "price", 15000.00,
                     "pointsRequired", 100,
                     "stockQuantity", 50,
@@ -451,8 +448,8 @@ public class PointController {
                 ),
                 Map.of(
                     "id", 2L,
-                    "name", "?�블러",
-                    "description", "?�테?�리???�블러",
+                    "name", "Tumbler",
+                    "description", "Stainless steel tumbler",
                     "price", 25000.00,
                     "pointsRequired", 200,
                     "stockQuantity", 30,
@@ -461,8 +458,8 @@ public class PointController {
                 ),
                 Map.of(
                     "id", 3L,
-                    "name", "?�활???�트",
-                    "description", "?�활??종이�?만든 ?�트",
+                    "name", "Eco Notebook",
+                    "description", "Notebook made from recycled paper",
                     "price", 8000.00,
                     "pointsRequired", 50,
                     "stockQuantity", 100,
@@ -471,8 +468,8 @@ public class PointController {
                 ),
                 Map.of(
                     "id", 4L,
-                    "name", "친환�???,
-                    "description", "?�활???�라?�틱 ??,
+                    "name", "Eco Pen",
+                    "description", "Pen made from recycled plastic",
                     "price", 5000.00,
                     "pointsRequired", 30,
                     "stockQuantity", 200,
@@ -481,8 +478,8 @@ public class PointController {
                 ),
                 Map.of(
                     "id", 5L,
-                    "name", "?�코 ?�분",
-                    "description", "?�활???�재 ?�분",
+                    "name", "Eco Plant Pot",
+                    "description", "Plant pot made from eco materials",
                     "price", 35000.00,
                     "pointsRequired", 300,
                     "stockQuantity", 20,
@@ -502,19 +499,18 @@ public class PointController {
     }
     
     /**
-     * ?�품 ID�?조회
      */
     @GetMapping("/products/{id}")
     public ResponseEntity<Map<String, Object>> getProductById(@PathVariable Long id) {
         try {
-            // ?�시�??�드코딩???�품 ?�이?�에??ID�?찾기 (?�스?�용)
+
             Map<String, Object> product = null;
             
             if (id == 1L) {
                 product = Map.of(
                     "id", 1L,
-                    "name", "?�코�?,
-                    "description", "친환�??�활???�코�?,
+                    "name", "Eco Bag",
+                    "description", "Eco-friendly reusable bag",
                     "price", 15000.00,
                     "pointsRequired", 100,
                     "stockQuantity", 50,
@@ -524,8 +520,8 @@ public class PointController {
             } else if (id == 2L) {
                 product = Map.of(
                     "id", 2L,
-                    "name", "?�블러",
-                    "description", "?�테?�리???�블러",
+                    "name", "Tumbler",
+                    "description", "Stainless steel tumbler",
                     "price", 25000.00,
                     "pointsRequired", 200,
                     "stockQuantity", 30,
@@ -535,8 +531,8 @@ public class PointController {
             } else if (id == 3L) {
                 product = Map.of(
                     "id", 3L,
-                    "name", "?�활???�트",
-                    "description", "?�활??종이�?만든 ?�트",
+                    "name", "Eco Notebook",
+                    "description", "Notebook made from recycled paper",
                     "price", 8000.00,
                     "pointsRequired", 50,
                     "stockQuantity", 100,
@@ -546,8 +542,8 @@ public class PointController {
             } else if (id == 4L) {
                 product = Map.of(
                     "id", 4L,
-                    "name", "친환�???,
-                    "description", "?�활???�라?�틱 ??,
+                    "name", "Eco Pen",
+                    "description", "Pen made from recycled plastic",
                     "price", 5000.00,
                     "pointsRequired", 30,
                     "stockQuantity", 200,
@@ -557,8 +553,8 @@ public class PointController {
             } else if (id == 5L) {
                 product = Map.of(
                     "id", 5L,
-                    "name", "?�코 ?�분",
-                    "description", "?�활???�재 ?�분",
+                    "name", "Eco Plant Pot",
+                    "description", "Plant pot made from eco materials",
                     "price", 35000.00,
                     "pointsRequired", 300,
                     "stockQuantity", 20,
@@ -575,7 +571,7 @@ public class PointController {
             } else {
                 return ResponseEntity.ok(Map.of(
                     "success", false,
-                    "message", "?�품??찾을 ???�습?�다."
+                    "message", "Product not found."
                 ));
             }
         } catch (Exception e) {
@@ -585,7 +581,7 @@ public class PointController {
     }
     
     /**
-     * ?�품 구매 (주문 ?�성)
+     * 상품 구매 (주문 생성)
      */
     @PostMapping("/orders")
     public ResponseEntity<Map<String, Object>> createOrder(@RequestBody Map<String, Object> request) {
@@ -598,7 +594,7 @@ public class PointController {
             List<Map<String, Object>> products = List.of(
                 Map.of("id", 1L, "name", "Eco Bag", "description", "Eco-friendly reusable bag", "pointsRequired", 100, "price", 15000.0, "category", "LIFESTYLE", "stockQuantity", 50, "imageUrl", "/images/products/ecobag.jpg"),
                 Map.of("id", 2L, "name", "Tumbler", "description", "Stainless steel tumbler", "pointsRequired", 200, "price", 25000.0, "category", "LIFESTYLE", "stockQuantity", 30, "imageUrl", "/images/products/tumbler.jpg"),
-                Map.of("id", 3L, "name", "Recycled Notebook", "description", "Notebook made from recycled paper", "pointsRequired", 50, "price", 8000.0, "category", "STATIONERY", "stockQuantity", 100, "imageUrl", "/images/products/notebook.jpg"),
+                Map.of("id", 3L, "name", "Eco Notebook", "description", "Notebook made from recycled paper", "pointsRequired", 50, "price", 8000.0, "category", "STATIONERY", "stockQuantity", 100, "imageUrl", "/images/products/notebook.jpg"),
                 Map.of("id", 4L, "name", "Eco Pen", "description", "Pen made from recycled plastic", "pointsRequired", 30, "price", 5000.0, "category", "STATIONERY", "stockQuantity", 200, "imageUrl", "/images/products/pen.jpg"),
                 Map.of("id", 5L, "name", "Eco Plant Pot", "description", "Plant pot made from recycled materials", "pointsRequired", 300, "price", 35000.0, "category", "LIFESTYLE", "stockQuantity", 20, "imageUrl", "/images/products/plantpot.jpg")
             );
@@ -616,26 +612,26 @@ public class PointController {
             int pointsRequired = (Integer) product.get("pointsRequired");
             int totalPointsRequired = pointsRequired * quantity;
             
-            // ?�용???�인???�인
+            // 사용자 포인트 확인
             var user = userService.getUserById(userId);
             if (user.getPointsTotal() < totalPointsRequired) {
                 return ResponseEntity.badRequest()
                     .body(Map.of("success", false, "message", "Insufficient points."));
             }
             
-            // ?�인??차감
+            // 포인트 차감
             int pointsToDeduct = -totalPointsRequired;
             pointHistoryService.createPointHistory(userId, "PRODUCT_PURCHASE", pointsToDeduct, 
                 product.get("name") + " purchase (" + quantity + " qty)");
             
-            // ?�용??�??�인???�데?�트
+            // 사용자의 총 포인트 업데이트
             userService.updateUserPoints(userId, pointsToDeduct);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "Product purchase completed successfully.",
                 "data", Map.of(
-                    "orderId", System.currentTimeMillis(), // ?�시 주문 ID
+                    "orderId", System.currentTimeMillis(), // 임시 주문 ID
                     "productName", product.get("name"),
                     "quantity", quantity,
                     "pointsSpent", totalPointsRequired,
@@ -648,7 +644,7 @@ public class PointController {
         }
     }
 
-    // ?��?지 조회 API
+    // 이미지 조회 API
     @GetMapping("/images/{imageId}")
     public ResponseEntity<?> getImage(@PathVariable Long imageId) {
         try {
@@ -666,13 +662,13 @@ public class PointController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            log.error("?��?지 조회 ?�패: {}", e.getMessage());
+            log.error("이미지 조회 실패: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("?��?지 조회???�패?�습?�다: " + e.getMessage());
+                    .body("이미지 조회에 실패했습니다: " + e.getMessage());
         }
     }
 
-    // ?�제 ?��?지 ?�일 ?�공
+    // 실제 이미지 파일 제공
     @GetMapping("/images/file/{imageId}")
     public ResponseEntity<byte[]> getImageFile(@PathVariable Long imageId) {
         try {
@@ -680,22 +676,22 @@ public class PointController {
             if (image.isPresent()) {
                 Image img = image.get();
                 
-                // ?�?�된 ?��?지 ?�이?��? ?�는지 ?�인
+                // 저장된 이미지 데이터가 있는지 확인
                 if (img.getImageData() != null && img.getImageData().length > 0) {
-                    log.info("?��?지 ?�일 ?�공: ID={}, ?�기={} bytes", imageId, img.getImageData().length);
+                    log.info("이미지 파일 제공: ID={}, 크기={} bytes", imageId, img.getImageData().length);
                     return ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(img.getContentType()))
                         .body(img.getImageData());
                 } else {
-                    log.warn("?��?지 ?�이?��? ?�음: ID={}", imageId);
+                    log.warn("이미지 데이터가 없음: ID={}", imageId);
                     return ResponseEntity.notFound().build();
                 }
             } else {
-                log.warn("?��?지�?찾을 ???�음: ID={}", imageId);
+                log.warn("이미지를 찾을 수 없음: ID={}", imageId);
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            log.error("?��?지 ?�일 ?�공 ?�패: {}", e.getMessage());
+            log.error("이미지 파일 제공 실패: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
