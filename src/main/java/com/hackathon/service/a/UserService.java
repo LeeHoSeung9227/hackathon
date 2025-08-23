@@ -124,6 +124,19 @@ public class UserService {
     }
     
     /**
+     * 이름으로 사용자 검색
+     */
+    public List<UserDto> searchUsersByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return List.of();
+        }
+        
+        return userRepository.findByNameContainingIgnoreCase(name.trim()).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * 포인트에 따른 레벨 계산
      */
     private int calculateLevel(int points) {
