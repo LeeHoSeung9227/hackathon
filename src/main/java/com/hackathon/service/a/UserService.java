@@ -8,6 +8,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -68,6 +69,24 @@ public class UserService {
             throw new RuntimeException("사용자를 찾을 수 없습니다: " + id);
         }
         userRepository.deleteById(id);
+    }
+    
+    /**
+     * 사용자 인증 (로그인용)
+     */
+    public Optional<UserDto> authenticateUser(String username, String password) {
+        try {
+            User user = userRepository.findByUsername(username)
+                    .orElse(null);
+            
+            if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+                return Optional.of(convertToDto(user));
+            }
+            
+            return Optional.empty();
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
     
     private UserDto convertToDto(User user) {

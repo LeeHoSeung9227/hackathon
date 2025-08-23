@@ -40,31 +40,25 @@ public class AuthController {
                     .body(Map.of("error", "사용자명과 비밀번호는 필수입니다."));
             }
             
-            // TODO: UserService에 authenticateUser 메서드 구현 필요
-            // var user = userService.authenticateUser(username, password);
-            // if (user.isEmpty()) {
-            //     return ResponseEntity.badRequest()
-            //         .body(Map.of("error", "잘못된 사용자명 또는 비밀번호입니다."));
-            // }
-            
-            // 임시 로그인 로직 (실제로는 사용자 검증 필요)
-            if ("admin".equals(username) && "password".equals(password)) {
-                // 로그인 세션 생성 (임시 사용자 ID: 1)
-                AuthLoginDto loginSession = authLoginService.createLoginSession(1L);
-                
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "로그인이 성공했습니다.",
-                    "data", Map.of(
-                        "userId", 1L,
-                        "username", username,
-                        "session", loginSession
-                    )
-                ));
-            } else {
+            // 실제 사용자 인증
+            var user = userService.authenticateUser(username, password);
+            if (user.isEmpty()) {
                 return ResponseEntity.badRequest()
                     .body(Map.of("error", "잘못된 사용자명 또는 비밀번호입니다."));
             }
+            
+            // 로그인 세션 생성
+            AuthLoginDto loginSession = authLoginService.createLoginSession(user.get().getId());
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "로그인이 성공했습니다.",
+                "data", Map.of(
+                    "userId", user.get().getId(),
+                    "username", user.get().getUsername(),
+                    "session", loginSession
+                )
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
@@ -121,22 +115,30 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> createSignupRequest(@RequestBody Map<String, String> request) {
         try {
             String username = request.get("username");
+            String password = request.get("password");
             String email = request.get("email");
+            String name = request.get("name");
+            String college = request.get("college");
+            String campus = request.get("campus");
             
-            if (username == null || email == null) {
+            if (username == null || password == null || email == null || name == null) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("error", "사용자명과 이메일은 필수입니다."));
+                    .body(Map.of("error", "사용자명, 비밀번호, 이메일, 이름은 필수입니다."));
             }
             
-            // 간소화: 예시로 비밀번호/프로필 정보는 임시 값
+            // 회원가입 신청 및 User 엔티티 생성
             SignupRequestDto signupRequest = signupRequestService.createSignupRequest(
-                username, email, "tempPassword", "tempName", null, null
+                username, email, password, name, college, campus
             );
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "가입 신청이 완료되었습니다. 이메일 인증을 확인해주세요.",
-                "data", signupRequest
+                "message", "회원가입이 완료되었습니다!",
+                "data", Map.of(
+                    "signupRequest", signupRequest,
+                    "userId", signupRequest.getUserId(),
+                    "message", "이제 이 userId로 로그인할 수 있습니다."
+                )
             ));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest()
