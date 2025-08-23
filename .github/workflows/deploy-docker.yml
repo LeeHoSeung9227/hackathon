@@ -28,12 +28,9 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # 4. JAR 이름 안전하게 변경
-      - name: Rename JAR for Docker
-        run: |
-          if [ ! -f target/app.jar ]; then
-            mv target/*.jar target/app.jar
-          fi
+      # 4. 빌드 확인
+      - name: Check JAR
+        run: ls -l target/
 
       # 5. Docker Hub 로그인
       - name: Login to Docker Hub
