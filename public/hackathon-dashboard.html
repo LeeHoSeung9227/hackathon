@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌱 Hackathon 통합 대시보드</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+            font-size: 1.4rem;
+        }
+        
+        .user-selector {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .user-selector label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .user-selector select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .test-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        .success {
+            border-left-color: #28a745;
+            background: #d4edda;
+        }
+        
+        .error {
+            border-left-color: #dc3545;
+            background: #f8d7da;
+        }
+        
+        .loading {
+            border-left-color: #ffc107;
+            background: #fff3cd;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .ranking-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .ranking-position {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 30px;
+        }
+        
+        .ranking-name {
+            flex: 1;
+            margin-left: 10px;
+        }
+        
+        .ranking-points {
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .level-progress {
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .ai-results {
+            margin: 10px 0;
+        }
+        
+        .ai-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #e8f5e8;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        
+        .point-history {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .point-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            margin: 3px 0;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        
+        .point-earned {
+            color: #28a745;
+            font-weight: bold;
+        }
+        
+        .point-spent {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .refresh-all {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 20px rgba(40, 167, 69, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .refresh-all:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(40, 167, 69, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌱 Hackathon 통합 대시보드</h1>
+            <p>AI 분석, 포인트 누적, 랭킹, 레벨 등 모든 기능을 한 번에 확인하세요!</p>
+        </div>
+
+        <!-- 사용자 선택 -->
+        <div class="user-selector">
+            <label for="user-select">테스트할 사용자 선택:</label>
+            <select id="user-select">
+                <option value="1">관리자 (ID: 1)</option>
+                <option value="2">설호 (ID: 2)</option>
+                <option value="3">김지수 (ID: 3)</option>
+                <option value="4">이가은 (ID: 4)</option>
+                <option value="5">이호승 (ID: 5)</option>
+                <option value="6">안예영 (ID: 6)</option>
+            </select>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- 사용자 정보 & 레벨 -->
+            <div class="card">
+                <h2>👤 사용자 정보 & 레벨</h2>
+                <button class="test-button" onclick="loadUserInfo()">사용자 정보 로드</button>
+                <div id="user-info" class="result-box">사용자를 선택하고 로드 버튼을 클릭하세요.</div>
+                
+                <div class="level-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="level-progress" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="level-text">레벨 정보를 로드하세요</div>
+                </div>
+            </div>
+
+            <!-- 포인트 현황 -->
+            <div class="card">
+                <h2>💎 포인트 현황</h2>
+                <button class="test-button" onclick="loadPointSummary()">포인트 요약</button>
+                <button class="test-button" onclick="loadPointHistory()">포인트 내역</button>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-points">0</span>
+                        <span class="stat-label">총 포인트</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="earned-points">0</span>
+                        <span class="stat-label">획득 포인트</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="spent-points">0</span>
+                        <span class="stat-label">사용 포인트</span>
+                    </div>
+                </div>
+                
+                <div class="point-history" id="point-history">
+                    <div class="point-item">포인트 내역을 로드하세요</div>
+                </div>
+            </div>
+
+            <!-- 랭킹 현황 -->
+            <div class="card">
+                <h2>🏆 랭킹 현황</h2>
+                <button class="test-button" onclick="loadIndividualRanking()">개인 랭킹</button>
+                <button class="test-button" onclick="loadCollegeRanking()">단과대 랭킹</button>
+                <button class="test-button" onclick="loadUserRanking()">내 순위</button>
+                
+                <div class="ranking-list" id="ranking-list">
+                    <div class="ranking-item">
+                        <span class="ranking-position">-</span>
+                        <span class="ranking-name">랭킹을 로드하세요</span>
+                        <span class="ranking-points">0점</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI 분석 결과 -->
+            <div class="card">
+                <h2>🤖 AI 분석 결과</h2>
+                <button class="test-button" onclick="loadAIResults()">AI 분석 결과</button>
+                <button class="test-button" onclick="loadUserImages()">업로드 이미지</button>
+                
+                <div class="ai-results" id="ai-results">
+                    <div class="ai-item">AI 분석 결과를 로드하세요</div>
+                </div>
+            </div>
+
+            <!-- 대시보드 종합 정보 -->
+            <div class="card">
+                <h2>📊 대시보드 종합</h2>
+                <button class="test-button" onclick="loadDashboard()">대시보드 로드</button>
+                <div id="dashboard-info" class="result-box">대시보드 정보를 로드하세요.</div>
+            </div>
+
+            <!-- 새로 추가된 기능 테스트 -->
+            <div class="card">
+                <h2>🆕 새로운 기능 테스트</h2>
+                <button class="test-button" onclick="testUserSearch()">이름으로 사용자 검색</button>
+                <button class="test-button" onclick="testTopRankings()">Top 30 랭킹 조회</button>
+                <button class="test-button" onclick="testPointsByType()">타입별 포인트 조회</button>
+                <div id="new-features-result" class="result-box">새로운 기능을 테스트하세요.</div>
+            </div>
+        </div>
+    </div>
+
+    <button class="refresh-all" onclick="refreshAll()">🔄 전체 새로고침</button>
+
+    <script>
+        const BASE_URL = 'http://43.203.226.243:8080';
+        
+        // 현재 선택된 사용자 ID 가져오기
+        function getCurrentUserId() {
+            return document.getElementById('user-select').value;
+        }
+        
+        // API 호출 함수
+        async function callAPI(endpoint, elementId = null) {
+            if (elementId) {
+                const element = document.getElementById(elementId);
+                element.textContent = '⏳ 로딩 중...';
+                element.className = 'result-box loading';
+            }
+            
+            try {
+                const response = await fetch(BASE_URL + endpoint);
+                const data = await response.json();
+                
+                if (elementId) {
+                    const element = document.getElementById(elementId);
+                    element.textContent = JSON.stringify(data, null, 2);
+                    element.className = response.ok ? 'result-box success' : 'result-box error';
+                }
+                
+                return data;
+            } catch (error) {
+                if (elementId) {
+                    const element = document.getElementById(elementId);
+                    element.textContent = `❌ 오류: ${error.message}`;
+                    element.className = 'result-box error';
+                }
+                throw error;
+            }
+        }
+        
+        // 사용자 정보 로드
+        async function loadUserInfo() {
+            const userId = getCurrentUserId();
+            try {
+                const data = await callAPI(`/api/users/${userId}`, 'user-info');
+                
+                if (data.success && data.data) {
+                    const user = data.data;
+                    
+                    // 레벨 진행률 계산 (임시로 포인트 기준)
+                    const levelProgress = Math.min((user.pointsTotal % 1000) / 10, 100);
+                    document.getElementById('level-progress').style.width = levelProgress + '%';
+                    document.getElementById('level-text').textContent = 
+                        `레벨 ${user.level} (${user.pointsTotal}점)`;
+                }
+            } catch (error) {
+                console.error('사용자 정보 로드 실패:', error);
+            }
+        }
+        
+        // 포인트 요약 로드
+        async function loadPointSummary() {
+            const userId = getCurrentUserId();
+            try {
+                const userData = await callAPI(`/api/users/${userId}`);
+                const pointData = await callAPI(`/api/points/user/${userId}`);
+                
+                if (userData.success && userData.data) {
+                    document.getElementById('total-points').textContent = userData.data.pointsTotal;
+                }
+                
+                if (pointData.success && pointData.data) {
+                    let earned = 0, spent = 0;
+                    pointData.data.forEach(point => {
+                        if (point.points > 0) earned += point.points;
+                        else spent += Math.abs(point.points);
+                    });
+                    
+                    document.getElementById('earned-points').textContent = earned;
+                    document.getElementById('spent-points').textContent = spent;
+                }
+            } catch (error) {
+                console.error('포인트 요약 로드 실패:', error);
+            }
+        }
+        
+        // 포인트 내역 로드
+        async function loadPointHistory() {
+            const userId = getCurrentUserId();
+            try {
+                const data = await callAPI(`/api/points/user/${userId}`);
+                
+                if (data.success && data.data) {
+                    const historyHtml = data.data.slice(0, 10).map(point => `
+                        <div class="point-item">
+                            <span>${point.description || point.type}</span>
+                            <span class="${point.points > 0 ? 'point-earned' : 'point-spent'}">
+                                ${point.points > 0 ? '+' : ''}${point.points}점
+                            </span>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('point-history').innerHTML = historyHtml;
+                }
+            } catch (error) {
+                console.error('포인트 내역 로드 실패:', error);
+            }
+        }
+        
+        // 개인 랭킹 로드
+        async function loadIndividualRanking() {
+            try {
+                const data = await callAPI('/api/rankings/individual/top?scopeType=TOTAL&limit=10');
+                displayRanking(data);
+            } catch (error) {
+                console.error('개인 랭킹 로드 실패:', error);
+            }
+        }
+        
+        // 단과대 랭킹 로드
+        async function loadCollegeRanking() {
+            try {
+                const data = await callAPI('/api/rankings/college/top?scopeType=TOTAL&limit=10');
+                displayRanking(data);
+            } catch (error) {
+                console.error('단과대 랭킹 로드 실패:', error);
+            }
+        }
+        
+        // 내 순위 확인
+        async function loadUserRanking() {
+            const userId = getCurrentUserId();
+            try {
+                const data = await callAPI(`/api/users/${userId}/rankings`);
+                
+                if (data.success && data.data) {
+                    const rankingHtml = Object.entries(data.data).map(([scope, rank]) => `
+                        <div class="ranking-item">
+                            <span class="ranking-position">${rank}위</span>
+                            <span class="ranking-name">${scope}</span>
+                            <span class="ranking-points">내 순위</span>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('ranking-list').innerHTML = rankingHtml;
+                }
+            } catch (error) {
+                console.error('사용자 랭킹 로드 실패:', error);
+            }
+        }
+        
+        // 랭킹 표시
+        function displayRanking(data) {
+            if (data.success && data.data && data.data.rankings) {
+                const rankingHtml = data.data.rankings.map((item, index) => `
+                    <div class="ranking-item">
+                        <span class="ranking-position">${index + 1}위</span>
+                        <span class="ranking-name">${item.name || item.username || `ID: ${item.userId}`}</span>
+                        <span class="ranking-points">${item.points}점</span>
+                    </div>
+                `).join('');
+                
+                document.getElementById('ranking-list').innerHTML = rankingHtml;
+            }
+        }
+        
+        // AI 분석 결과 로드
+        async function loadAIResults() {
+            const userId = getCurrentUserId();
+            try {
+                const data = await callAPI(`/api/ai/user/${userId}`, 'ai-results');
+                
+                if (data.success && data.data) {
+                    const aiHtml = data.data.slice(0, 5).map(result => `
+                        <div class="ai-item">
+                            <strong>분석 결과:</strong> ${result.resultData || 'AI 분석 완료'}<br>
+                            <small>분석 시간: ${new Date(result.createdAt).toLocaleString()}</small>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('ai-results').innerHTML = aiHtml || '<div class="ai-item">AI 분석 결과가 없습니다.</div>';
+                }
+            } catch (error) {
+                console.error('AI 결과 로드 실패:', error);
+            }
+        }
+        
+        // 업로드 이미지 로드
+        async function loadUserImages() {
+            const userId = getCurrentUserId();
+            await callAPI(`/api/ai/images/user/${userId}`, 'ai-results');
+        }
+        
+        // 대시보드 로드
+        async function loadDashboard() {
+            const userId = getCurrentUserId();
+            await callAPI(`/api/main/dashboard/${userId}`, 'dashboard-info');
+        }
+        
+        // 사용자 검색 테스트
+        async function testUserSearch() {
+            await callAPI('/api/users/search?name=설호', 'new-features-result');
+        }
+        
+        // Top 랭킹 테스트
+        async function testTopRankings() {
+            await callAPI('/api/rankings/individual/top?scopeType=TOTAL&limit=30', 'new-features-result');
+        }
+        
+        // 타입별 포인트 조회 테스트
+        async function testPointsByType() {
+            const userId = getCurrentUserId();
+            await callAPI(`/api/points/user/${userId}/type/EARNED`, 'new-features-result');
+        }
+        
+        // 전체 새로고침
+        async function refreshAll() {
+            await loadUserInfo();
+            await loadPointSummary();
+            await loadPointHistory();
+            await loadIndividualRanking();
+            await loadAIResults();
+            await loadDashboard();
+        }
+        
+        // 사용자 변경 시 자동 새로고침
+        document.getElementById('user-select').addEventListener('change', refreshAll);
+        
+        // 페이지 로드 시 초기 데이터 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            // 초기 로드는 사용자가 선택 후 수동으로 하도록 함
+        });
+    </script>
+</body>
+</html>
