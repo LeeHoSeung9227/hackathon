@@ -2,85 +2,148 @@ package com.hackathon.controller.a;
 
 import com.hackathon.dto.a.UserDto;
 import com.hackathon.service.a.UserService;
+import com.hackathon.service.a.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import com.hackathon.dto.a.RankingDto;
 
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
-
+    
     private final UserService userService;
-
-    // ===== 사용자 관리 =====
+    private final RankingService rankingService;
     
+    /**
+     * 모든 사용자 목록 조회
+     */
     @GetMapping
-    public ResponseEntity<List<UserDto>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<Map<String, Object>> getAllUsers() {
+        try {
+            List<UserDto> users = userService.getAllUsers();
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", users
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
     }
-
+    
+    /**
+     * 특정 사용자 정보 조회
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    public ResponseEntity<Map<String, Object>> getUserById(@PathVariable Long id) {
+        try {
+            UserDto user = userService.getUserById(id);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", user
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
     }
-
+    
+    /**
+     * 새 사용자 생성
+     */
     @PostMapping
-    public ResponseEntity<UserDto> createUser(@RequestBody UserDto userDto) {
-        return ResponseEntity.ok(
-            userService.createUser(
-                userDto.getUsername(),
-                userDto.getEmail(),
-                "tempPassword",
-                userDto.getName(),
-                userDto.getCollege(),
-                userDto.getCampus()
-            )
-        );
+    public ResponseEntity<Map<String, Object>> createUser(@RequestBody Map<String, String> request) {
+        try {
+            String username = request.get("username");
+            String email = request.get("email");
+            String password = request.get("password");
+            String name = request.get("name");
+            String college = request.get("college");
+            String campus = request.get("campus");
+            
+            UserDto user = userService.createUser(username, email, password, name, college, campus);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", user
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
     }
-
+    
+    /**
+     * 사용자 정보 수정
+     */
     @PutMapping("/{id}")
-    public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
-        return ResponseEntity.ok(userService.updateUser(id, userDto));
+    public ResponseEntity<Map<String, Object>> updateUser(@PathVariable Long id, @RequestBody UserDto userDto) {
+        try {
+            UserDto updatedUser = userService.updateUser(id, userDto);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", updatedUser
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
     }
-
+    
+    /**
+     * 사용자 삭제
+     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Map<String, Object>> deleteUser(@PathVariable Long id) {
+        try {
+            userService.deleteUser(id);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "사용자가 삭제되었습니다."
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
     }
-
-    // ===== 랭킹 시스템 (임시 비활성화) =====
     
     /**
-     * 특정 범위의 랭킹 조회
+     * 사용자별 랭킹 조회 (스코프별)
      */
-    @GetMapping("/{id}/rankings/scope/{scopeType}")
+    @GetMapping("/{userId}/rankings/scope/{scopeType}")
     public ResponseEntity<Map<String, Object>> getUserRankingsByScope(
-            @PathVariable Long id, 
+            @PathVariable Long userId, 
             @PathVariable String scopeType) {
-        return ResponseEntity.badRequest()
-            .body(Map.of("error", "랭킹 시스템이 임시로 비활성화되었습니다."));
+        try {
+            List<Map<String, Object>> rankings = rankingService.getUserRankings(userId, scopeType);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", rankings
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
     }
     
     /**
-     * 사용자 개별 랭킹 조회
+     * 사용자 랭킹 요약
      */
-    @GetMapping("/{id}/rankings")
-    public ResponseEntity<Map<String, Object>> getUserRankings(@PathVariable Long id) {
-        return ResponseEntity.badRequest()
-            .body(Map.of("error", "랭킹 시스템이 임시로 비활성화되었습니다."));
-    }
-    
-    /**
-     * 사용자 랭킹 정보 요약
-     */
-    @GetMapping("/{id}/rankings/summary")
-    public ResponseEntity<Map<String, Object>> getUserRankingSummary(@PathVariable Long id) {
-        return ResponseEntity.badRequest()
-            .body(Map.of("error", "랭킹 시스템이 임시로 비활성화되었습니다."));
+    @GetMapping("/{userId}/rankings")
+    public ResponseEntity<Map<String, Object>> getUserRankingSummary(@PathVariable Long userId) {
+        try {
+            Map<String, Object> summary = rankingService.getUserRankingSummary(userId);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", summary
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
     }
 }

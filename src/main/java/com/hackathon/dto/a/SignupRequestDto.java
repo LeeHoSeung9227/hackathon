@@ -1,9 +1,15 @@
 package com.hackathon.dto.a;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class SignupRequestDto {
     private Long id;
     private String username;
@@ -13,6 +19,7 @@ public class SignupRequestDto {
     private String college;
     private String campus;
     private String status;
+    private Long userId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

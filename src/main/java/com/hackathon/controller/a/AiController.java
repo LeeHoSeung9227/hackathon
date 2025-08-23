@@ -10,6 +10,7 @@ import com.hackathon.repository.a.ImageRepository;
 import com.hackathon.repository.a.PointHistoryRepository;
 import com.hackathon.service.a.AiResultService;
 import com.hackathon.service.a.ChatGptImageAnalysisService;
+import com.hackathon.service.common.WasteRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -32,12 +33,14 @@ public class AiController {
     private final ImageRepository imageRepository;
     private final ChatGptImageAnalysisService chatGptImageAnalysisService;
     private final PointHistoryRepository pointHistoryRepository;
+    private final WasteRecordService wasteRecordService;
     
-    public AiController(AiResultService aiResultService, ImageRepository imageRepository, ChatGptImageAnalysisService chatGptImageAnalysisService, PointHistoryRepository pointHistoryRepository) {
+    public AiController(AiResultService aiResultService, ImageRepository imageRepository, ChatGptImageAnalysisService chatGptImageAnalysisService, PointHistoryRepository pointHistoryRepository, WasteRecordService wasteRecordService) {
         this.aiResultService = aiResultService;
         this.imageRepository = imageRepository;
         this.chatGptImageAnalysisService = chatGptImageAnalysisService;
         this.pointHistoryRepository = pointHistoryRepository;
+        this.wasteRecordService = wasteRecordService;
         
         // 의존성 주입 상태 확인
         log.info("=== AiController 생성자 실행 ===");
@@ -127,6 +130,19 @@ public class AiController {
                 } catch (Exception e) {
                     log.warn("⚠️ 포인트 히스토리 저장 실패: {}", e.getMessage());
                 }
+            }
+            
+            // WasteRecord에도 저장 (대시보드용)
+            try {
+                wasteRecordService.createWasteRecord(
+                    1L, // 임시 사용자 ID
+                    result.getWasteType(),
+                    result.getPointsEarned(),
+                    null // 이미지 URL은 나중에 추가
+                );
+                log.info("✅ WasteRecord 저장 완료: {}", result.getWasteType());
+            } catch (Exception e) {
+                log.warn("⚠️ WasteRecord 저장 실패: {}", e.getMessage());
             }
             
             return ResponseEntity.ok(result);

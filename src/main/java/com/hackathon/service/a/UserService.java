@@ -89,6 +89,51 @@ public class UserService {
         }
     }
     
+    /**
+     * 사용자 포인트 업데이트 (추가/차감)
+     */
+    public void updateUserPoints(Long userId, Integer points) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다: " + userId));
+        
+        int newTotalPoints = user.getPointsTotal() + points;
+        if (newTotalPoints < 0) {
+            newTotalPoints = 0; // 포인트는 음수가 될 수 없음
+        }
+        
+        user.setPointsTotal(newTotalPoints);
+        
+        // 레벨업 체크
+        int newLevel = calculateLevel(newTotalPoints);
+        if (newLevel > user.getLevel()) {
+            user.setLevel(newLevel);
+        }
+        
+        userRepository.save(user);
+    }
+    
+    /**
+     * 단과대 총 포인트 계산
+     */
+    public int getCollegeTotalPoints(String college) {
+        if (college == null) return 0;
+        
+        return userRepository.findByCollege(college).stream()
+                .mapToInt(User::getPointsTotal)
+                .sum();
+    }
+    
+    /**
+     * 포인트에 따른 레벨 계산
+     */
+    private int calculateLevel(int points) {
+        if (points >= 1000) return 5;      // 나무
+        if (points >= 500) return 4;       // 큰 새싹
+        if (points >= 200) return 3;       // 새싹
+        if (points >= 100) return 2;       // 작은 새싹
+        return 1;                          // 씨앗
+    }
+    
     private UserDto convertToDto(User user) {
         UserDto dto = new UserDto();
         dto.setId(user.getId());

@@ -1,12 +1,18 @@
 package com.hackathon.entity.a;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "signup_requests")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class SignupRequest {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +32,8 @@ public class SignupRequest {
     
     private String college;
     private String campus;
+    
+    private Long userId;
     
     @Column(nullable = false)
     private String status = "PENDING";
