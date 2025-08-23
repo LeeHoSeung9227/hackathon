@@ -1,105 +1,59 @@
-name: Deploy Docker to EC2
+name: CI/CD Pipeline - Docker Hub
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main"]   # main 브랜치에 push될 때만 실행
 
-env:
-  AWS_REGION: eu-north-1
-  ECR_REPO: my-api
-  ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-north-1.amazonaws.com
-  EC2_HOST: ${{ secrets.EC2_HOST }}
-  EC2_USER: ec2-user
-  EC2_APP_DIR: /opt/app
-  EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
+concurrency:
+  group: deploy
+  cancel-in-progress: true   # 최신 코드만 배포
 
 jobs:
-  build_and_push:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+
     steps:
+      # 1. 코드 가져오기
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      # 2. JDK 설치
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
-          distribution: temurin
           java-version: '17'
+          distribution: 'temurin'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-version: '8.5'
+      # 3. Maven 빌드 (JAR 생성)
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
 
-      - name: Build JAR
-        run: gradle clean bootJar
+      # 4. Docker Hub 로그인
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Prepare app.jar
+      # 5. Docker 이미지 빌드 & 푸시
+      - name: Build and push Docker image
         run: |
-          JAR=$(ls build/libs/*.jar | head -n1)
-          cp "$JAR" app.jar
+          IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/hackathon-server:latest
+          docker build -t $IMAGE_NAME .
+          docker push $IMAGE_NAME
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      # 6. EC2 서버에 배포
+      - name: Deploy to EC2 Server
+        uses: appleboy/ssh-action@v1.0.0
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build & Push image
-        run: |
-          docker build -t "$ECR_REPO:latest" .
-          docker tag "$ECR_REPO:latest" "$ECR_REGISTRY/$ECR_REPO:latest"
-          docker tag "$ECR_REPO:latest" "$ECR_REGISTRY/$ECR_REPO:${{ github.sha }}"
-          docker push "$ECR_REGISTRY/$ECR_REPO:latest"
-          docker push "$ECR_REGISTRY/$ECR_REPO:${{ github.sha }}"
-
-  deploy:
-    needs: build_and_push
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Deploy Application
-        run: |
-          echo "=== 애플리케이션 배포 시작 ==="
-          
-          # ECR 로그인
-          echo "--- ECR 로그인 ---"
-          CMD_ID=$(aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --comment "ECR login" \
-            --instance-ids "${{ env.EC2_INSTANCE_ID }}" \
-            --parameters 'commands=["aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 345594599315.dkr.ecr.eu-north-1.amazonaws.com"]' \
-            --query "Command.CommandId" --output text)
-          
-          echo "ECR login command ID: $CMD_ID"
-          timeout 300 aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "${{ env.EC2_INSTANCE_ID }}" || echo "ECR login may still be running"
-          
-          # 이미지 pull 및 실행
-          echo "--- 이미지 pull 및 실행 ---"
-          CMD_ID=$(aws ssm send-command \
-            --document-name "AWS-RunShellScript" \
-            --comment "deploy app" \
-            --instance-ids "${{ env.EC2_INSTANCE_ID }}" \
-            --parameters 'commands=["docker compose -f /opt/app/docker-compose.yml pull", "docker compose -f /opt/app/docker-compose.yml up -d", "docker ps", "sleep 10", "curl -s http://127.0.0.1:8080/actuator/health || echo \"Health check failed\""]' \
-            --query "Command.CommandId" --output text)
-          
-          echo "Deploy command ID: $CMD_ID"
-          timeout 600 aws ssm wait command-executed --command-id "$CMD_ID" --instance-id "${{ env.EC2_INSTANCE_ID }}" || echo "Deploy may still be running"
-          
-          # 최종 결과 확인
-          echo "=== 최종 배포 결과 ==="
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "${{ env.EC2_INSTANCE_ID }}" || true
+          host: ${{ secrets.SERVER_HOST }}        # EC2 IP
+          username: ${{ secrets.SERVER_USER }}    # ec2-user
+          key: ${{ secrets.SERVER_KEY }}          # PEM key 내용
+          script: |
+            IMAGE_NAME=${{ secrets.DOCKER_USERNAME }}/hackathon-server:latest
+            echo "=== Pulling latest image ==="
+            docker pull $IMAGE_NAME
+            echo "=== Stopping existing container if exists ==="
+            docker stop hackathon-server || true
+            docker rm hackathon-server || true
+            echo "=== Running new container ==="
+            docker run -d --name hackathon-server -p 8080:8080 $IMAGE_NAME
+            echo "=== Container status ==="
+            docker ps
