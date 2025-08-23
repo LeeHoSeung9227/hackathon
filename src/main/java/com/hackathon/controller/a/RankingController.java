@@ -88,4 +88,77 @@ public class RankingController {
                 .body(Map.of("error", e.getMessage()));
         }
     }
+    
+    /**
+     * 개인 랭킹 Top 30/100 조회
+     */
+    @GetMapping("/individual/top")
+    public ResponseEntity<Map<String, Object>> getIndividualTopRankings(
+            @RequestParam(defaultValue = "TOTAL") String scopeType,
+            @RequestParam(defaultValue = "30") int limit) {
+        try {
+            log.info("=== 개인 랭킹 Top {} 조회 시작 ===", limit);
+            log.info("스코프 타입: {}", scopeType);
+            
+            // limit을 30 또는 100으로 제한
+            if (limit != 30 && limit != 100) {
+                limit = 30; // 기본값
+            }
+            
+            List<Map<String, Object>> rankings = rankingService.getTopRankings(scopeType, limit);
+            
+            log.info("=== 개인 랭킹 Top {} 조회 완료 ===", limit);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", Map.of(
+                    "scopeType", scopeType,
+                    "limit", limit,
+                    "rankings", rankings
+                )
+            ));
+        } catch (Exception e) {
+            log.error("개인 랭킹 Top {} 조회 중 에러 발생: {}", limit, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * 단과대 랭킹 Top 30/100 조회
+     */
+    @GetMapping("/college/top")
+    public ResponseEntity<Map<String, Object>> getCollegeTopRankings(
+            @RequestParam(defaultValue = "TOTAL") String scopeType,
+            @RequestParam(defaultValue = "30") int limit) {
+        try {
+            log.info("=== 단과대 랭킹 Top {} 조회 시작 ===", limit);
+            log.info("스코프 타입: {}", scopeType);
+            
+            // limit을 30 또는 100으로 제한
+            if (limit != 30 && limit != 100) {
+                limit = 30; // 기본값
+            }
+            
+            List<Map<String, Object>> collegeRankings = rankingService.getCollegeRankings(scopeType);
+            
+            // Top N으로 제한
+            List<Map<String, Object>> topRankings = collegeRankings.stream()
+                .limit(limit)
+                .collect(java.util.stream.Collectors.toList());
+            
+            log.info("=== 단과대 랭킹 Top {} 조회 완료 ===", limit);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", Map.of(
+                    "scopeType", scopeType,
+                    "limit", limit,
+                    "rankings", topRankings
+                )
+            ));
+        } catch (Exception e) {
+            log.error("단과대 랭킹 Top {} 조회 중 에러 발생: {}", limit, e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
 }

@@ -27,6 +27,18 @@ public class PointHistoryService {
         return convertToDto(savedHistory);
     }
     
+    public PointHistoryDto createPointHistory(Long userId, String type, Integer points, String description, Long imageId) {
+        PointHistory history = new PointHistory();
+        history.setUserId(userId);
+        history.setType(type);
+        history.setPoints(points);
+        history.setDescription(description);
+        history.setImageId(imageId);  // 이미지 ID 설정
+        
+        PointHistory savedHistory = pointHistoryRepository.save(history);
+        return convertToDto(savedHistory);
+    }
+    
     public PointHistoryDto getPointHistoryById(Long id) {
         PointHistory history = pointHistoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("포인트 내역을 찾을 수 없습니다: " + id));
@@ -51,6 +63,12 @@ public class PointHistoryService {
                 .collect(Collectors.toList());
     }
     
+    public List<PointHistoryDto> getPointHistoryByImageId(Long imageId) {
+        return pointHistoryRepository.findByImageId(imageId).stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+    
     public void deletePointHistory(Long id) {
         if (!pointHistoryRepository.existsById(id)) {
             throw new RuntimeException("포인트 내역을 찾을 수 없습니다: " + id);
@@ -65,6 +83,7 @@ public class PointHistoryService {
         dto.setType(history.getType());
         dto.setPoints(history.getPoints());
         dto.setDescription(history.getDescription());
+        dto.setImageId(history.getImageId());  // 이미지 ID 추가
         dto.setCreatedAt(history.getCreatedAt());
         dto.setUpdatedAt(history.getUpdatedAt());
         return dto;

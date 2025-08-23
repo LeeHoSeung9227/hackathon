@@ -23,6 +23,8 @@ public class PointHistory {
     
     private String description;
     
+    private Long imageId;  // 이미지 ID 추가
+    
     @Column(nullable = false)
     private LocalDateTime createdAt;
     

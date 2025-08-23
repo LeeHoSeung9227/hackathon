@@ -146,4 +146,25 @@ public class UserController {
                 .body(Map.of("error", e.getMessage()));
         }
     }
+    
+    /**
+     * 이름으로 사용자 검색
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchUsersByName(@RequestParam String name) {
+        try {
+            List<UserDto> users = userService.searchUsersByName(name);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", Map.of(
+                    "searchTerm", name,
+                    "totalCount", users.size(),
+                    "users", users
+                )
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
 }

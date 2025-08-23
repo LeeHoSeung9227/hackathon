@@ -10,6 +10,7 @@ public class PointHistoryDto {
     private String type;
     private Integer points;
     private String description;
+    private Long imageId;  // 이미지 ID 추가
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

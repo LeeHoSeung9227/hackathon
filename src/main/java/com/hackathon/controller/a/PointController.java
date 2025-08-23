@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/points")
@@ -144,7 +145,26 @@ public class PointController {
      */
     @GetMapping("/image/{imagesId}")
     public ResponseEntity<Map<String, Object>> getImagePointHistory(@PathVariable Long imagesId) {
-        return ResponseEntity.badRequest().body(Map.of("error", "이미지별 포인트 내역 조회는 지원하지 않습니다."));
+        try {
+            List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByImageId(imagesId);
+            
+            // 총 포인트 계산
+            int totalPoints = pointHistory.stream()
+                .mapToInt(PointHistoryDto::getPoints)
+                .sum();
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", Map.of(
+                    "imageId", imagesId,
+                    "totalPoints", totalPoints,
+                    "history", pointHistory
+                )
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
     }
     
     /**
@@ -157,13 +177,23 @@ public class PointController {
         try {
             List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByUserIdAndType(userId, changeType);
             
+            // 총 포인트 계산
+            int totalPoints = pointHistory.stream()
+                .mapToInt(PointHistoryDto::getPoints)
+                .sum();
+            
             List<PointHistoryDto> pointDtos = pointHistory.stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", pointDtos
+                "data", Map.of(
+                    "userId", userId,
+                    "changeType", changeType,
+                    "totalPoints", totalPoints,  // 총 포인트 추가
+                    "history", pointDtos         // 상세 내역
+                )
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
@@ -179,7 +209,35 @@ public class PointController {
             @PathVariable Long userId,
             @RequestParam String startDate,
             @RequestParam String endDate) {
-        return ResponseEntity.badRequest().body(Map.of("error", "날짜 범위별 포인트 내역 조회는 지원하지 않습니다."));
+        try {
+            // 날짜 파싱 (간단한 구현)
+            LocalDateTime start = LocalDateTime.parse(startDate + "T00:00:00");
+            LocalDateTime end = LocalDateTime.parse(endDate + "T23:59:59");
+            
+            // 포인트 히스토리 조회 (기간별)
+            List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByUserId(userId).stream()
+                .filter(ph -> ph.getCreatedAt().isAfter(start) && ph.getCreatedAt().isBefore(end))
+                .collect(Collectors.toList());
+            
+            // 총 포인트 계산
+            int totalPoints = pointHistory.stream()
+                .mapToInt(PointHistoryDto::getPoints)
+                .sum();
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", Map.of(
+                    "userId", userId,
+                    "startDate", startDate,
+                    "endDate", endDate,
+                    "totalPoints", totalPoints,  // 총 포인트 추가
+                    "history", pointHistory      // 상세 내역
+                )
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "날짜 형식이 올바르지 않습니다. (YYYY-MM-DD 형식)" + e.getMessage()));
+        }
     }
 
     // ===== DTO 변환 메서드 =====
