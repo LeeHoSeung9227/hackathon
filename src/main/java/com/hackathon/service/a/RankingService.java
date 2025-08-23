@@ -9,35 +9,54 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
+import java.util.stream.Collectors;
 
+import com.hackathon.repository.a.PointHistoryRepository;
+import com.hackathon.repository.a.UserRepository;
+import com.hackathon.entity.a.PointHistory;
+import com.hackathon.entity.a.User;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
-@Slf4j
 public class RankingService {
-    
+
+    private final UserRepository userRepository;
+    private final PointHistoryRepository pointHistoryRepository;
+
     /**
      * 사용자별 랭킹 조회 (스코프별)
      */
     public List<Map<String, Object>> getUserRankings(Long userId, String scopeType) {
         try {
-            // 간단한 테스트용 랭킹 반환 (시간별 포인트 계산)
-            List<Map<String, Object>> rankings = new ArrayList<>();
+            log.info("=== 사용자 랭킹 조회 시작 ===");
+            log.info("사용자 ID: {}, 스코프: {}", userId, scopeType);
+            
+            // 실제 사용자 정보 조회
+            var user = userRepository.findById(userId);
+            if (user.isEmpty()) {
+                throw new RuntimeException("사용자를 찾을 수 없습니다: " + userId);
+            }
+            
+            // 스코프별 포인트 계산
+            int scopePoints = calculateUserScopePoints(userId, scopeType);
             
             Map<String, Object> ranking = new HashMap<>();
             ranking.put("userId", userId);
-            ranking.put("username", "testuser");
-            ranking.put("name", "테스트 사용자");
-            ranking.put("college", "공과대학");
-            ranking.put("campus", "서울캠퍼스");
-            ranking.put("points", calculateScopePoints(scopeType));
+            ranking.put("username", user.get().getUsername());
+            ranking.put("name", user.get().getName());
+            ranking.put("college", user.get().getCollege());
+            ranking.put("campus", user.get().getCampus());
+            ranking.put("points", scopePoints);
             ranking.put("scopeType", scopeType);
-            ranking.put("rank", 1);
+            ranking.put("rank", calculateUserRank(userId, scopeType));
             
-            rankings.add(ranking);
-            return rankings;
+            log.info("=== 사용자 랭킹 조회 완료 ===");
+            return List.of(ranking);
                 
         } catch (Exception e) {
+            log.error("사용자 랭킹 조회 중 에러 발생: {}", e.getMessage(), e);
             throw new RuntimeException("랭킹 조회에 실패했습니다: " + e.getMessage());
         }
     }
@@ -47,26 +66,31 @@ public class RankingService {
      */
     public Map<String, Object> getUserRankingSummary(Long userId) {
         try {
+            log.info("=== 사용자 랭킹 요약 시작 ===");
+            log.info("사용자 ID: {}", userId);
+            
             Map<String, Object> summary = new HashMap<>();
             
             // 각 스코프별 랭킹 조회
             String[] scopeTypes = {"DAILY", "WEEKLY", "MONTHLY", "TOTAL"};
             
             for (String scopeType : scopeTypes) {
-                List<Map<String, Object>> rankings = getUserRankings(userId, scopeType);
-                if (!rankings.isEmpty()) {
-                    Map<String, Object> ranking = rankings.get(0);
-                    summary.put(scopeType.toLowerCase(), Map.of(
-                        "rank", ranking.get("rank"),
-                        "points", ranking.get("points"),
-                        "totalUsers", getTotalUsersInScope(scopeType)
-                    ));
-                }
+                int points = calculateUserScopePoints(userId, scopeType);
+                int rank = calculateUserRank(userId, scopeType);
+                int totalUsers = getTotalUsersInScope(scopeType);
+                
+                summary.put(scopeType.toLowerCase(), Map.of(
+                    "rank", rank,
+                    "points", points,
+                    "totalUsers", totalUsers
+                ));
             }
             
+            log.info("=== 사용자 랭킹 요약 완료 ===");
             return summary;
             
         } catch (Exception e) {
+            log.error("사용자 랭킹 요약 중 에러 발생: {}", e.getMessage(), e);
             throw new RuntimeException("랭킹 요약 조회에 실패했습니다: " + e.getMessage());
         }
     }
@@ -76,6 +100,8 @@ public class RankingService {
      */
     public Map<String, Object> getAllRankings() {
         try {
+            log.info("=== 전체 랭킹 조회 시작 ===");
+            
             Map<String, Object> allRankings = new HashMap<>();
             
             // 개인 랭킹 (전체)
@@ -86,65 +112,94 @@ public class RankingService {
             List<Map<String, Object>> collegeRankings = getCollegeRankings("TOTAL");
             allRankings.put("college", collegeRankings);
             
+            log.info("=== 전체 랭킹 조회 완료 ===");
             return allRankings;
             
         } catch (Exception e) {
+            log.error("전체 랭킹 조회 중 에러 발생: {}", e.getMessage(), e);
             throw new RuntimeException("전체 랭킹 조회에 실패했습니다: " + e.getMessage());
         }
     }
     
     /**
-     * 상위 랭킹 조회
+     * 상위 랭킹 조회 (실제 데이터 사용)
      */
     public List<Map<String, Object>> getTopRankings(String scopeType, int limit) {
         try {
-            List<Map<String, Object>> rankings = new ArrayList<>();
+            log.info("=== 상위 랭킹 조회 시작 ===");
+            log.info("스코프: {}, 제한: {}", scopeType, limit);
             
-            for (int i = 1; i <= Math.min(limit, 10); i++) {
-                Map<String, Object> ranking = new HashMap<>();
-                ranking.put("userId", i);
-                ranking.put("username", "user" + i);
-                ranking.put("name", "사용자" + i);
-                ranking.put("college", "공과대학");
-                ranking.put("campus", "서울캠퍼스");
-                ranking.put("points", calculateScopePoints(scopeType) * i);
-                ranking.put("scopeType", scopeType);
-                ranking.put("rank", i);
-                rankings.add(ranking);
+            // 모든 사용자 조회
+            List<User> allUsers = userRepository.findAll();
+            
+            // 스코프별 포인트 계산 및 정렬
+            List<Map<String, Object>> rankings = allUsers.stream()
+                .map(user -> {
+                    Map<String, Object> ranking = new HashMap<>();
+                    ranking.put("userId", user.getId());
+                    ranking.put("username", user.getUsername());
+                    ranking.put("name", user.getName());
+                    ranking.put("college", user.getCollege());
+                    ranking.put("campus", user.getCampus());
+                    ranking.put("points", calculateUserScopePoints(user.getId(), scopeType));
+                    ranking.put("scopeType", scopeType);
+                    return ranking;
+                })
+                .sorted((a, b) -> Integer.compare((Integer) b.get("points"), (Integer) a.get("points")))
+                .limit(limit)
+                .collect(Collectors.toList());
+            
+            // 순위 추가
+            for (int i = 0; i < rankings.size(); i++) {
+                rankings.get(i).put("rank", i + 1);
             }
             
+            log.info("=== 상위 랭킹 조회 완료 ===");
             return rankings;
             
         } catch (Exception e) {
+            log.error("상위 랭킹 조회 중 에러 발생: {}", e.getMessage(), e);
             throw new RuntimeException("상위 랭킹 조회에 실패했습니다: " + e.getMessage());
         }
     }
     
     /**
-     * 단과대 랭킹 조회 (스코프별)
+     * 단과대 랭킹 조회 (실제 데이터 사용)
      */
     public List<Map<String, Object>> getCollegeRankings(String scopeType) {
         try {
             log.info("=== 단과대 랭킹 조회 시작 ===");
             log.info("스코프 타입: {}", scopeType);
             
+            // 단과대별 사용자 그룹화
+            Map<String, List<User>> collegeGroups = userRepository.findAll().stream()
+                .collect(Collectors.groupingBy(User::getCollege));
+            
             List<Map<String, Object>> collegeRankings = new ArrayList<>();
             
-            String[] colleges = {"공과대학", "인문대학", "자연대학"};
-            log.info("처리할 단과대: {}", Arrays.toString(colleges));
-            
-            for (int i = 0; i < colleges.length; i++) {
-                log.info("단과대 {} 처리 중...", colleges[i]);
+            for (Map.Entry<String, List<User>> entry : collegeGroups.entrySet()) {
+                String college = entry.getKey();
+                List<User> users = entry.getValue();
+                
+                // 단과대 총 포인트 계산
+                int totalPoints = users.stream()
+                    .mapToInt(user -> calculateUserScopePoints(user.getId(), scopeType))
+                    .sum();
                 
                 Map<String, Object> collegeRanking = new HashMap<>();
-                collegeRanking.put("college", colleges[i]);
-                collegeRanking.put("totalPoints", calculateScopePoints(scopeType) * (1000 + (i * 500)));
-                collegeRanking.put("userCount", 10 + (i * 5));
+                collegeRanking.put("college", college);
+                collegeRanking.put("totalPoints", totalPoints);
+                collegeRanking.put("userCount", users.size());
                 collegeRanking.put("scopeType", scopeType);
-                collegeRanking.put("rank", i + 1);
                 collegeRankings.add(collegeRanking);
-                
-                log.info("단과대 {} 처리 완료: {}", colleges[i], collegeRanking);
+            }
+            
+            // 포인트 순으로 정렬
+            collegeRankings.sort((a, b) -> Integer.compare((Integer) b.get("totalPoints"), (Integer) a.get("totalPoints")));
+            
+            // 순위 추가
+            for (int i = 0; i < collegeRankings.size(); i++) {
+                collegeRankings.get(i).put("rank", i + 1);
             }
             
             log.info("=== 단과대 랭킹 조회 완료 ===");
@@ -157,20 +212,75 @@ public class RankingService {
     }
     
     /**
-     * 스코프별 포인트 계산 (테스트용)
+     * 사용자별 스코프 포인트 계산 (실제 데이터 사용)
      */
-    private int calculateScopePoints(String scopeType) {
+    private int calculateUserScopePoints(Long userId, String scopeType) {
+        try {
+            LocalDateTime startTime = getScopeStartTime(scopeType);
+            LocalDateTime endTime = LocalDateTime.now();
+            
+            // 해당 기간의 포인트 히스토리 조회
+            List<PointHistory> histories = pointHistoryRepository.findByUserIdAndCreatedAtBetween(userId, startTime, endTime);
+            
+            // 포인트 합계 계산
+            return histories.stream()
+                .mapToInt(PointHistory::getPoints)
+                .sum();
+                
+        } catch (Exception e) {
+            log.warn("사용자 {} 스코프 {} 포인트 계산 실패: {}", userId, scopeType, e.getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * 사용자 순위 계산 (실제 데이터 사용)
+     */
+    private int calculateUserRank(Long userId, String scopeType) {
+        try {
+            // 모든 사용자의 스코프 포인트 계산
+            List<Map<String, Object>> userPoints = userRepository.findAll().stream()
+                .map(user -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("userId", user.getId());
+                    map.put("points", calculateUserScopePoints(user.getId(), scopeType));
+                    return map;
+                })
+                .sorted((a, b) -> Integer.compare((Integer) b.get("points"), (Integer) a.get("points")))
+                .collect(Collectors.toList());
+            
+            // 해당 사용자의 순위 찾기
+            for (int i = 0; i < userPoints.size(); i++) {
+                if (userPoints.get(i).get("userId").equals(userId)) {
+                    return i + 1;
+                }
+            }
+            
+            return userPoints.size(); // 마지막 순위
+            
+        } catch (Exception e) {
+            log.warn("사용자 {} 스코프 {} 순위 계산 실패: {}", userId, scopeType, e.getMessage());
+            return 1;
+        }
+    }
+    
+    /**
+     * 스코프 시작 시간 계산
+     */
+    private LocalDateTime getScopeStartTime(String scopeType) {
+        LocalDateTime now = LocalDateTime.now();
+        
         switch (scopeType.toUpperCase()) {
             case "DAILY":
-                return 50;      // 일간: 50점
+                return now.toLocalDate().atStartOfDay();
             case "WEEKLY":
-                return 200;     // 주간: 200점
+                return now.with(TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)).toLocalDate().atStartOfDay();
             case "MONTHLY":
-                return 800;     // 월간: 800점
+                return now.withDayOfMonth(1).toLocalDate().atStartOfDay();
             case "TOTAL":
-                return 1000;    // 전체: 1000점
+                return LocalDateTime.of(2000, 1, 1, 0, 0); // 매우 과거
             default:
-                return 100;
+                return now.toLocalDate().atStartOfDay();
         }
     }
     
@@ -178,8 +288,11 @@ public class RankingService {
      * 스코프별 총 사용자 수
      */
     private int getTotalUsersInScope(String scopeType) {
-        // 실제로는 해당 기간에 활동한 사용자 수를 계산해야 함
-        // 임시로 전체 사용자 수 반환
-        return 10;
+        try {
+            return (int) userRepository.count();
+        } catch (Exception e) {
+            log.warn("스코프 {} 총 사용자 수 조회 실패: {}", scopeType, e.getMessage());
+            return 0;
+        }
     }
 }
