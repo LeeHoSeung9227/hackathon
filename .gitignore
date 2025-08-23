@@ -62,3 +62,12 @@ lerna-debug.log*
 
 # OS
 Thumbs.db
+
+
+.gradle/
+bin/
+build/
+target/
+*.class
+*.jar
+*.war

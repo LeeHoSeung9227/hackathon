@@ -337,6 +337,30 @@ public class AiController {
         }
     }
 
+    /**
+     * 환경 변수 테스트
+     */
+    @GetMapping("/test-env")
+    public ResponseEntity<Map<String, Object>> testEnvironmentVariables() {
+        try {
+            // 실제 환경 변수 값 확인
+            String openaiKey = System.getenv("OPENAI_API_KEY");
+            String openaiKeyFromProperty = System.getProperty("OPENAI_API_KEY");
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "환경 변수 테스트",
+                "timestamp", LocalDateTime.now().toString(),
+                "OPENAI_API_KEY_env", openaiKey != null ? openaiKey.substring(0, Math.min(20, openaiKey.length())) + "..." : "NULL",
+                "OPENAI_API_KEY_property", openaiKeyFromProperty != null ? openaiKeyFromProperty.substring(0, Math.min(20, openaiKeyFromProperty.length())) + "..." : "NULL",
+                "apiKey_length", openaiKey != null ? openaiKey.length() : 0
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+
     // ===== DTO 변환 메서드 =====
     
     private AiResultDto convertToDto(AiResult aiResult) {

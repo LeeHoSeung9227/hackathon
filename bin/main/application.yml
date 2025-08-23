@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8082
 
 spring:
   main:
@@ -41,7 +41,7 @@ spring:
 # OpenAI API 설정
 openai:
   api:
-    key: ${OPENAI_API_KEY:your-openai-api-key-here}
+    key: ${OPENAI_API_KEY}
     model: ${OPENAI_MODEL:gpt-4o-mini}
     max-tokens: ${OPENAI_MAX_TOKENS:200}
 

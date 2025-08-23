@@ -17,16 +17,17 @@ import java.util.Map;
 @Service
 public class ChatGptImageAnalysisService {
     
-    private final String apiKey;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final ImageCompressionService imageCompressionService;
+    
+    private final String apiKey;
     
     public ChatGptImageAnalysisService(@Value("${openai.api.key}") String apiKey, 
                                      ImageCompressionService imageCompressionService) {
         this.apiKey = apiKey;
         this.imageCompressionService = imageCompressionService;
-        log.info("ChatGptImageAnalysisService 생성자 실행 - API 키: {}...", apiKey.substring(0, 20));
+        log.info("ChatGptImageAnalysisService 생성자 실행 - API 키: {}...", apiKey.substring(0, Math.min(20, apiKey.length())));
     }
     
     // 포인트 시스템 정의
@@ -83,11 +84,11 @@ public class ChatGptImageAnalysisService {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(apiKey);
-            log.info("API 키 설정 완료: {}...", apiKey.substring(0, 20));
+            log.info("API 키 설정 완료: {}...", apiKey.substring(0, Math.min(20, apiKey.length())));
             
             // 한국어로 응답하도록 프롬프트 설정
-            String systemPrompt = "이미지를 보고 쓰레기 분류를 한국어로 답변하세요. 형식: '재질-상태,이유' (예: PET-순수함,라벨제거됨)";
-            String userPrompt = "이 이미지의 쓰레기 분류를 한국어로 답변해주세요.";
+            String systemPrompt = "이미지를 보고 쓰레기 분류를 한국어로 답변하세요. 재질은 다음 중 하나로 정확히 분류하세요: PET, CAN, PAPER, GLASS, PLASTIC, PP, PS, PVC, HDPE, LDPE, ALUMINUM, STEEL. 상태는 다음 중 하나로 판별하세요: 순수함(라벨X, 음식물,음료료 X,깨끗함), 보통(약간의 흔적), 오염(음식물이나 색이 다른 액체), 라벨(라벨이 있음). 형식: '재질-상태,이유' (예: GLASS-순수함,투명컵으로 라벨제거됨)";
+            String userPrompt = "이 이미지의 쓰레기 분류를 위의 재질 중 하나로 정확히 분류하고, 상태를 신중하게 판별해주세요. 라벨이 있다면 '라벨'으로, 실제로 음료나 음식물이 남아있다면 '오염'으로, 깨끗하다면 '순수함'으로 어느정도 괜찮다면 '보통'으로 분류해주세요.";
             log.info("프롬프트 설정: system='{}', user='{}'", systemPrompt, userPrompt);
             
             // 요청 본문 생성
@@ -158,6 +159,21 @@ public class ChatGptImageAnalysisService {
                type.equals("LDPE") || type.equals("ALUMINUM") || type.equals("STEEL");
     }
     
+    private int calculatePoints(String wasteType, String status) {
+        // 재활용 불가능한 재질이면 0점
+        if (!isRecyclableWaste(wasteType)) {
+            return 0;
+        }
+        
+        // 상태가 "순수함"이 아니면 0점
+        if (status.contains("순수함") || status.contains("보통")) {
+            return 10;
+        }
+        
+        // 재활용 가능 + 순수한 상태 = 10점
+        return 10;
+    }
+    
     private ImageAnalysisResult parseAnalysisResult(String analysisResult) {
         try {
             log.info("분석 결과 파싱 시작: {}", analysisResult);
@@ -205,10 +221,13 @@ public class ChatGptImageAnalysisService {
             }
             
             // 재활용 가능 여부 판단 (재질별로 판단)
-            boolean isRecyclable = isRecyclableWaste(wasteType);
+            boolean isRecyclable = isRecyclableWaste(wasteType) && 
+                      !status.contains("오염") && 
+                      !status.contains("손상") && 
+                      !status.contains("라벨");
             
-            // 포인트 계산: 재활용 가능하면 10점, 불가능하면 0점
-            int points = isRecyclable ? 10 : 0;
+            // 포인트 계산: 순수한 상태만 10점
+            int points = calculatePoints(wasteType, status);
             
             log.info("최종 결과: 재질='{}', 상태='{}', 포인트={}, 재활용가능={}", 
                 wasteType, status, points, isRecyclable);

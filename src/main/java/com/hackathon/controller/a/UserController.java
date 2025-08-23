@@ -1,9 +1,7 @@
 package com.hackathon.controller.a;
 
 import com.hackathon.dto.a.UserDto;
-import com.hackathon.dto.a.RankingDto;
 import com.hackathon.service.a.UserService;
-import com.hackathon.service.a.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +15,6 @@ import java.util.Map;
 public class UserController {
 
     private final UserService userService;
-    private final RankingService rankingService;
 
     // ===== 사용자 관리 =====
     
@@ -56,7 +53,7 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    // ===== 랭킹 시스템 =====
+    // ===== 랭킹 시스템 (임시 비활성화) =====
     
     /**
      * 특정 범위의 랭킹 조회
@@ -65,17 +62,8 @@ public class UserController {
     public ResponseEntity<Map<String, Object>> getUserRankingsByScope(
             @PathVariable Long id, 
             @PathVariable String scopeType) {
-        try {
-            List<RankingDto> rankings = rankingService.getRankingsByCategory(scopeType);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", rankings
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
+        return ResponseEntity.badRequest()
+            .body(Map.of("error", "랭킹 시스템이 임시로 비활성화되었습니다."));
     }
     
     /**
@@ -83,44 +71,16 @@ public class UserController {
      */
     @GetMapping("/{id}/rankings")
     public ResponseEntity<Map<String, Object>> getUserRankings(@PathVariable Long id) {
-        try {
-            List<RankingDto> rankings = rankingService.getUserRankings(id);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", rankings
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
+        return ResponseEntity.badRequest()
+            .body(Map.of("error", "랭킹 시스템이 임시로 비활성화되었습니다."));
     }
     
     /**
      * 사용자 랭킹 정보 요약
      */
-    @GetMapping("/{id}/ranking-summary")
+    @GetMapping("/{id}/rankings/summary")
     public ResponseEntity<Map<String, Object>> getUserRankingSummary(@PathVariable Long id) {
-        try {
-            List<RankingDto> rankings = rankingService.getUserRankings(id);
-            RankingDto top = rankings.isEmpty() ? null : rankings.get(0);
-            Map<String, Object> summary = top == null ? Map.of(
-                "rank", null,
-                "points", 0,
-                "category", "INDIVIDUAL"
-            ) : Map.of(
-                "rank", top.getRankPosition(),
-                "points", top.getPoints(),
-                "category", top.getCategory()
-            );
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", summary
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
+        return ResponseEntity.badRequest()
+            .body(Map.of("error", "랭킹 시스템이 임시로 비활성화되었습니다."));
     }
 }
