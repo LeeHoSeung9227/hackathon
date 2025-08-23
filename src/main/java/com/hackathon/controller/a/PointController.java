@@ -33,10 +33,10 @@ public class PointController {
     private final PointHistoryRepository pointHistoryRepository;
     private final ImageRepository imageRepository;
     
-    // ===== ?¬ì¸??ì¶”ê?/ì°¨ê° =====
+    // ===== Point Add/Subtract =====
     
     /**
-     * ?¬ì¸??ì¶”ê?/ì°¨ê°
+     * Add/Subtract Points
      */
     @PostMapping("/add")
     public ResponseEntity<Map<String, Object>> addPoints(@RequestBody Map<String, Object> request) {
@@ -46,14 +46,15 @@ public class PointController {
             String type = (String) request.get("type");
             String description = (String) request.get("description");
             
-            // ?¬ì¸???ˆìŠ¤? ë¦¬ ?€??            PointHistoryDto pointHistory = pointHistoryService.createPointHistory(userId, type, points, description);
+            // Create point history
+            PointHistoryDto pointHistory = pointHistoryService.createPointHistory(userId, type, points, description);
             
-            // ?¬ìš©??ì´??¬ì¸???…ë°?´íŠ¸
+            // Update user points
             userService.updateUserPoints(userId, points);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", points > 0 ? "?¬ì¸?¸ê? ì¶”ê??˜ì—ˆ?µë‹ˆ??" : "?¬ì¸?¸ê? ì°¨ê°?˜ì—ˆ?µë‹ˆ??",
+                "message", points > 0 ? "Points added successfully" : "Points subtracted successfully",
                 "data", Map.of(
                     "pointHistory", pointHistory,
                     "pointsChanged", points,
@@ -67,18 +68,18 @@ public class PointController {
     }
     
     /**
-     * ?¬ìš©???¬ì¸???”ì•½ ?•ë³´ (ì´??¬ì¸?? ?„ì¬ ?¬ì¸?? ?¬ìš© ?¬ì¸?? ?¨ê³¼?€ ì´??¬ì¸??
+     * Get user point summary (total earned, current points, spent points, college total points)
      */
     @GetMapping("/user/{userId}/summary")
     public ResponseEntity<Map<String, Object>> getUserPointSummary(@PathVariable Long userId) {
         try {
-            // ?¬ìš©???•ë³´ ì¡°íšŒ
+            // Get user info
             var user = userService.getUserById(userId);
             
-            // ?¬ì¸???ˆìŠ¤? ë¦¬ ì¡°íšŒ
+            // Get point history
             List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByUserId(userId);
             
-            // ?¬ì¸??ê³„ì‚°
+            // Calculate points
             int totalEarned = pointHistory.stream()
                 .filter(ph -> ph.getPoints() > 0)
                 .mapToInt(PointHistoryDto::getPoints)
@@ -91,10 +92,10 @@ public class PointController {
             
             int currentPoints = user.getPointsTotal();
             
-            // ?¨ê³¼?€ ì´??¬ì¸??(ê°™ì? ?¨ê³¼?€ ?¬ìš©?ë“¤???¬ì¸???©ê³„)
+            // College total points (sum of points from users in same college)
             int collegeTotalPoints = userService.getCollegeTotalPoints(user.getCollege());
             
-            // ?ˆë²¨ ?•ë³´
+            // Level info
             String levelName = getLevelName(user.getLevel());
             
             Map<String, Object> summary = Map.of(
@@ -108,7 +109,11 @@ public class PointController {
                     "levelName", levelName
                 ),
                 "points", Map.of(
-                    "totalEarned", totalEarned,      // ì´??ë“ ?¬ì¸??                    "totalSpent", totalSpent,        // ì´??¬ìš© ?¬ì¸??                    "currentPoints", currentPoints,  // ?„ì¬ ë³´ìœ  ?¬ì¸??                    "collegeTotalPoints", collegeTotalPoints  // ?¨ê³¼?€ ì´??¬ì¸??                ),
+                    "totalEarned", totalEarned,      // Total earned points
+                    "totalSpent", totalSpent,        // Total spent points
+                    "currentPoints", currentPoints,  // Current points
+                    "collegeTotalPoints", collegeTotalPoints  // College total points
+                ),
                 "recentHistory", pointHistory.stream()
                     .limit(5)
                     .collect(Collectors.toList())
@@ -124,10 +129,10 @@ public class PointController {
         }
     }
     
-    // ===== ?¬ì¸???´ì—­ =====
+    // ===== Point History =====
     
     /**
-     * ?¬ìš©???¬ì¸???´ì—­ ì¡°íšŒ
+     * Get user point history
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<Map<String, Object>> getUserPointHistory(@PathVariable Long userId) {
@@ -149,14 +154,14 @@ public class PointController {
     }
     
     /**
-     * ?´ë?ì§€ë³??¬ì¸???´ì—­ ì¡°íšŒ
+     * Get point history with images
      */
     @GetMapping("/image/{imagesId}")
     public ResponseEntity<Map<String, Object>> getImagePointHistory(@PathVariable Long imagesId) {
         try {
             List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByImageId(imagesId);
             
-            // ì´??¬ì¸??ê³„ì‚°
+            // ï¿½??ï¿½ì¸??ê³„ì‚°
             int totalPoints = pointHistory.stream()
                 .mapToInt(PointHistoryDto::getPoints)
                 .sum();
@@ -176,7 +181,7 @@ public class PointController {
     }
     
     /**
-     * ë³€ê²??€?…ë³„ ?¬ì¸???´ì—­ ì¡°íšŒ (changeType??'all'?´ë©´ ëª¨ë“  ?€??ë°˜í™˜)
+     * Get point history by change type (if changeType is 'all', return all types)
      */
     @GetMapping("/user/{userId}/type/{changeType}")
     public ResponseEntity<?> getPointHistoryByType(
@@ -187,7 +192,7 @@ public class PointController {
             List<Map<String, Object>> result = new ArrayList<>();
             
             if ("all".equals(changeType)) {
-                // ëª¨ë“  ?€?…ì˜ ?¬ì¸???ˆìŠ¤? ë¦¬ ì¡°íšŒ
+                // Get all types of point history
                 List<PointHistory> histories = pointHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
                 
                 for (PointHistory history : histories) {
@@ -201,7 +206,7 @@ public class PointController {
                     historyMap.put("createdAt", history.getCreatedAt());
                     historyMap.put("updatedAt", history.getUpdatedAt());
                     
-                    // ?´ë?ì§€ ?•ë³´ê°€ ?ˆëŠ” ê²½ìš° ì¶”ê?
+                    // ?ï¿½ï¿½?ì§€ ?ï¿½ë³´ê°€ ?ï¿½ëŠ” ê²½ìš° ì¶”ï¿½?
                     if (history.getImageId() != null) {
                         try {
                             var image = imageRepository.findById(history.getImageId());
@@ -216,14 +221,14 @@ public class PointController {
                                 historyMap.put("image", imageInfo);
                             }
                         } catch (Exception e) {
-                            log.warn("?´ë?ì§€ ì¡°íšŒ ?¤íŒ¨: {}", e.getMessage());
+                            log.warn("?ï¿½ï¿½?ì§€ ì¡°íšŒ ?ï¿½íŒ¨: {}", e.getMessage());
                         }
                     }
                     
                     result.add(historyMap);
                 }
             } else {
-                // ?¹ì • ?€?…ì˜ ?¬ì¸???ˆìŠ¤? ë¦¬ ì¡°íšŒ
+                // ?ï¿½ì • ?ï¿½?ï¿½ì˜ ?ï¿½ì¸???ï¿½ìŠ¤?ï¿½ë¦¬ ì¡°íšŒ
                 List<PointHistory> histories = pointHistoryRepository.findByUserIdAndTypeOrderByCreatedAtDesc(userId, changeType);
                 
                 for (PointHistory history : histories) {
@@ -237,7 +242,7 @@ public class PointController {
                     historyMap.put("createdAt", history.getCreatedAt());
                     historyMap.put("updatedAt", history.getUpdatedAt());
                     
-                    // ?´ë?ì§€ ?•ë³´ê°€ ?ˆëŠ” ê²½ìš° ì¶”ê?
+                    // ?ï¿½ï¿½?ì§€ ?ï¿½ë³´ê°€ ?ï¿½ëŠ” ê²½ìš° ì¶”ï¿½?
                     if (history.getImageId() != null) {
                         try {
                             var image = imageRepository.findById(history.getImageId());
@@ -252,7 +257,7 @@ public class PointController {
                                 historyMap.put("image", imageInfo);
                             }
                         } catch (Exception e) {
-                            log.warn("?´ë?ì§€ ì¡°íšŒ ?¤íŒ¨: {}", e.getMessage());
+                            log.warn("?ï¿½ï¿½?ì§€ ì¡°íšŒ ?ï¿½íŒ¨: {}", e.getMessage());
                         }
                     }
                     
@@ -263,25 +268,25 @@ public class PointController {
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
-            log.error("?¬ì¸???ˆìŠ¤? ë¦¬ ì¡°íšŒ ?¤íŒ¨: {}", e.getMessage());
+            log.error("?ï¿½ì¸???ï¿½ìŠ¤?ï¿½ë¦¬ ì¡°íšŒ ?ï¿½íŒ¨: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("?¬ì¸???ˆìŠ¤? ë¦¬ ì¡°íšŒ???¤íŒ¨?ˆìŠµ?ˆë‹¤: " + e.getMessage());
+                    .body("Failed to retrieve point history: " + e.getMessage());
         }
     }
 
     /**
-     * ?¬ìš©???µí•© ?€?œë³´???•ë³´ ì¡°íšŒ (ì´í¬?¸íŠ¸, ?¬ì§„, ?ë¦½?´ìš©, ?œê°„ ??
+     * ?ï¿½ìš©???ï¿½í•© ?ï¿½?ï¿½ë³´???ï¿½ë³´ ì¡°íšŒ (ì´í¬?ï¿½íŠ¸, ?ï¿½ì§„, ?ï¿½ë¦½?ï¿½ìš©, ?ï¿½ê°„ ??
      */
     @GetMapping("/user/{userId}/dashboard/comprehensive")
     public ResponseEntity<Map<String, Object>> getUserComprehensiveDashboard(@PathVariable Long userId) {
         try {
-            // ?¬ìš©???•ë³´ ì¡°íšŒ
+            // ?ï¿½ìš©???ï¿½ë³´ ì¡°íšŒ
             var user = userService.getUserById(userId);
             
-            // ?¬ì¸???ˆìŠ¤? ë¦¬ ì¡°íšŒ
+            // ?ï¿½ì¸???ï¿½ìŠ¤?ï¿½ë¦¬ ì¡°íšŒ
             List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByUserId(userId);
             
-            // ?¬ì¸??ê³„ì‚°
+            // ?ï¿½ì¸??ê³„ì‚°
             int totalEarned = pointHistory.stream()
                 .filter(ph -> ph.getPoints() > 0)
                 .mapToInt(PointHistoryDto::getPoints)
@@ -294,7 +299,7 @@ public class PointController {
             
             int currentPoints = user.getPointsTotal();
             
-            // ?ì„¸ ?¬ì¸???ë¦½ ?•ë³´ (?´ë?ì§€, ë±ƒì?, ?˜ë™ ?? - ëª¨ë“  ?€???œì‹œ
+            // ?ï¿½ì„¸ ?ï¿½ì¸???ï¿½ë¦½ ?ï¿½ë³´ (?ï¿½ï¿½?ì§€, ë±ƒï¿½?, ?ï¿½ë™ ?? - ëª¨ë“  ?ï¿½???ï¿½ì‹œ
             List<Map<String, Object>> detailedHistory = pointHistory.stream()
                 .map(ph -> {
                     Map<String, Object> detail = Map.of(
@@ -310,14 +315,17 @@ public class PointController {
                 })
                 .collect(Collectors.toList());
             
-            // ?µê³„ ?•ë³´ (?¬ì§„ ë¶„ì„ ?Ÿìˆ˜ ?œê±°)
+            // Statistics info (removed photo analysis count)
             Map<String, Object> statistics = Map.of(
-                "totalEarned", totalEarned,      // ì´??ë“ ?¬ì¸??                "totalSpent", totalSpent,        // ì´??¬ìš© ?¬ì¸??                "currentPoints", currentPoints,  // ?„ì¬ ë³´ìœ  ?¬ì¸??                "badgeCount", detailedHistory.stream()
+                "totalEarned", totalEarned,      // Total earned points
+                "totalSpent", totalSpent,        // Total spent points
+                "currentPoints", currentPoints,  // Current points
+                "badgeCount", detailedHistory.stream()
                     .filter(h -> "BADGE_EARNED".equals(h.get("type")))
-                    .count(),                    // ë±ƒì? ?ë“ ?Ÿìˆ˜
+                    .count(),                    // Badge earned count
                 "manualCount", detailedHistory.stream()
                     .filter(h -> "MANUAL_ADD".equals(h.get("type")))
-                    .count()                     // ?˜ë™ ì¶”ê? ?Ÿìˆ˜
+                    .count()                     // Manual add count
             );
             
             Map<String, Object> dashboard = Map.of(
@@ -348,7 +356,7 @@ public class PointController {
     }
     
     /**
-     * ? ì§œ ë²”ìœ„ë³??¬ì¸???´ì—­ ì¡°íšŒ
+     * ?ï¿½ì§œ ë²”ìœ„ï¿½??ï¿½ì¸???ï¿½ì—­ ì¡°íšŒ
      */
     @GetMapping("/user/{userId}/range")
     public ResponseEntity<Map<String, Object>> getUserPointHistoryByDateRange(
@@ -356,16 +364,16 @@ public class PointController {
             @RequestParam String startDate,
             @RequestParam String endDate) {
         try {
-            // ? ì§œ ?Œì‹± (ê°„ë‹¨??êµ¬í˜„)
+            // ?ï¿½ì§œ ?ï¿½ì‹± (ê°„ë‹¨??êµ¬í˜„)
             LocalDateTime start = LocalDateTime.parse(startDate + "T00:00:00");
             LocalDateTime end = LocalDateTime.parse(endDate + "T23:59:59");
             
-            // ?¬ì¸???ˆìŠ¤? ë¦¬ ì¡°íšŒ (ê¸°ê°„ë³?
+            // ?ï¿½ì¸???ï¿½ìŠ¤?ï¿½ë¦¬ ì¡°íšŒ (ê¸°ê°„ï¿½?
             List<PointHistoryDto> pointHistory = pointHistoryService.getPointHistoryByUserId(userId).stream()
                 .filter(ph -> ph.getCreatedAt().isAfter(start) && ph.getCreatedAt().isBefore(end))
                 .collect(Collectors.toList());
             
-            // ì´??¬ì¸??ê³„ì‚°
+            // ï¿½??ï¿½ì¸??ê³„ì‚°
             int totalPoints = pointHistory.stream()
                 .mapToInt(PointHistoryDto::getPoints)
                 .sum();
@@ -376,65 +384,65 @@ public class PointController {
                     "userId", userId,
                     "startDate", startDate,
                     "endDate", endDate,
-                    "totalPoints", totalPoints,  // ì´??¬ì¸??ì¶”ê?
-                    "history", pointHistory      // ?ì„¸ ?´ì—­
+                    "totalPoints", totalPoints,  // ï¿½??ï¿½ì¸??ì¶”ï¿½?
+                    "history", pointHistory      // ?ï¿½ì„¸ ?ï¿½ì—­
                 )
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(Map.of("error", "? ì§œ ?•ì‹???¬ë°”ë¥´ì? ?ŠìŠµ?ˆë‹¤. (YYYY-MM-DD ?•ì‹)" + e.getMessage()));
+                .body(Map.of("error", "?ï¿½ì§œ ?ï¿½ì‹???ï¿½ë°”ë¥´ï¿½? ?ï¿½ìŠµ?ï¿½ë‹¤. (YYYY-MM-DD ?ï¿½ì‹)" + e.getMessage()));
         }
     }
 
     // ===== DTO ë³€??ë©”ì„œ??=====
     
     private PointHistoryDto convertToDto(PointHistoryDto dto) {
-        return dto; // ?´ë? DTO?´ë?ë¡?ê·¸ë?ë¡?ë°˜í™˜
+        return dto; // ?ï¿½ï¿½? DTO?ï¿½ï¿½?ï¿½?ê·¸ï¿½?ï¿½?ë°˜í™˜
     }
 
     private String getLevelName(int level) {
         switch (level) {
             case 1:
-                return "?¨ì•—";
+                return "?ï¿½ì•—";
             case 2:
-                return "?‘ì? ?ˆì‹¹";
+                return "?ï¿½ï¿½? ?ï¿½ì‹¹";
             case 3:
-                return "?ˆì‹¹";
+                return "?ï¿½ì‹¹";
             case 4:
-                return "???ˆì‹¹";
+                return "???ï¿½ì‹¹";
             case 5:
-                return "?˜ë¬´";
+                return "?ï¿½ë¬´";
             default:
-                return "?¨ì•—";
+                return "?ï¿½ì•—";
         }
     }
     
     private String getSourceType(String type, Long imageId) {
         if (imageId != null) {
-            return "?¬ì§„";
+            return "?ï¿½ì§„";
         } else if ("BADGE_EARNED".equals(type)) {
-            return "ë±ƒì?";
+            return "ë±ƒï¿½?";
         } else if ("MANUAL_ADD".equals(type)) {
-            return "?˜ë™";
+            return "?ï¿½ë™";
         } else {
-            return "ê¸°í?";
+            return "ê¸°ï¿½?";
         }
     }
     
-    // ===== ?í’ˆ ì¡°íšŒ API (?ŒìŠ¤?¸ìš©) =====
+    // ===== ?ï¿½í’ˆ ì¡°íšŒ API (?ï¿½ìŠ¤?ï¿½ìš©) =====
     
     /**
-     * ëª¨ë“  ?í’ˆ ì¡°íšŒ
+     * ëª¨ë“  ?ï¿½í’ˆ ì¡°íšŒ
      */
     @GetMapping("/products")
     public ResponseEntity<Map<String, Object>> getAllProducts() {
         try {
-            // ?„ì‹œë¡??˜ë“œì½”ë”©???í’ˆ ?°ì´??ë°˜í™˜ (?ŒìŠ¤?¸ìš©)
+            // ?ï¿½ì‹œï¿½??ï¿½ë“œì½”ë”©???ï¿½í’ˆ ?ï¿½ì´??ë°˜í™˜ (?ï¿½ìŠ¤?ï¿½ìš©)
             List<Map<String, Object>> products = List.of(
                 Map.of(
                     "id", 1L,
-                    "name", "?ì½”ë°?,
-                    "description", "ì¹œí™˜ê²??¬í™œ???ì½”ë°?,
+                    "name", "?ï¿½ì½”ï¿½?,
+                    "description", "ì¹œí™˜ï¿½??ï¿½í™œ???ï¿½ì½”ï¿½?,
                     "price", 15000.00,
                     "pointsRequired", 100,
                     "stockQuantity", 50,
@@ -443,8 +451,8 @@ public class PointController {
                 ),
                 Map.of(
                     "id", 2L,
-                    "name", "?€ë¸”ëŸ¬",
-                    "description", "?¤í…Œ?¸ë¦¬???€ë¸”ëŸ¬",
+                    "name", "?ï¿½ë¸”ëŸ¬",
+                    "description", "?ï¿½í…Œ?ï¿½ë¦¬???ï¿½ë¸”ëŸ¬",
                     "price", 25000.00,
                     "pointsRequired", 200,
                     "stockQuantity", 30,
@@ -453,8 +461,8 @@ public class PointController {
                 ),
                 Map.of(
                     "id", 3L,
-                    "name", "?¬í™œ???¸íŠ¸",
-                    "description", "?¬í™œ??ì¢…ì´ë¡?ë§Œë“  ?¸íŠ¸",
+                    "name", "?ï¿½í™œ???ï¿½íŠ¸",
+                    "description", "?ï¿½í™œ??ì¢…ì´ï¿½?ë§Œë“  ?ï¿½íŠ¸",
                     "price", 8000.00,
                     "pointsRequired", 50,
                     "stockQuantity", 100,
@@ -463,8 +471,8 @@ public class PointController {
                 ),
                 Map.of(
                     "id", 4L,
-                    "name", "ì¹œí™˜ê²???,
-                    "description", "?¬í™œ???Œë¼?¤í‹± ??,
+                    "name", "ì¹œí™˜ï¿½???,
+                    "description", "?ï¿½í™œ???ï¿½ë¼?ï¿½í‹± ??,
                     "price", 5000.00,
                     "pointsRequired", 30,
                     "stockQuantity", 200,
@@ -473,8 +481,8 @@ public class PointController {
                 ),
                 Map.of(
                     "id", 5L,
-                    "name", "?ì½” ?”ë¶„",
-                    "description", "?¬í™œ???Œì¬ ?”ë¶„",
+                    "name", "?ï¿½ì½” ?ï¿½ë¶„",
+                    "description", "?ï¿½í™œ???ï¿½ì¬ ?ï¿½ë¶„",
                     "price", 35000.00,
                     "pointsRequired", 300,
                     "stockQuantity", 20,
@@ -494,19 +502,19 @@ public class PointController {
     }
     
     /**
-     * ?í’ˆ IDë¡?ì¡°íšŒ
+     * ?ï¿½í’ˆ IDï¿½?ì¡°íšŒ
      */
     @GetMapping("/products/{id}")
     public ResponseEntity<Map<String, Object>> getProductById(@PathVariable Long id) {
         try {
-            // ?„ì‹œë¡??˜ë“œì½”ë”©???í’ˆ ?°ì´?°ì—??IDë¡?ì°¾ê¸° (?ŒìŠ¤?¸ìš©)
+            // ?ï¿½ì‹œï¿½??ï¿½ë“œì½”ë”©???ï¿½í’ˆ ?ï¿½ì´?ï¿½ì—??IDï¿½?ì°¾ê¸° (?ï¿½ìŠ¤?ï¿½ìš©)
             Map<String, Object> product = null;
             
             if (id == 1L) {
                 product = Map.of(
                     "id", 1L,
-                    "name", "?ì½”ë°?,
-                    "description", "ì¹œí™˜ê²??¬í™œ???ì½”ë°?,
+                    "name", "?ï¿½ì½”ï¿½?,
+                    "description", "ì¹œí™˜ï¿½??ï¿½í™œ???ï¿½ì½”ï¿½?,
                     "price", 15000.00,
                     "pointsRequired", 100,
                     "stockQuantity", 50,
@@ -516,8 +524,8 @@ public class PointController {
             } else if (id == 2L) {
                 product = Map.of(
                     "id", 2L,
-                    "name", "?€ë¸”ëŸ¬",
-                    "description", "?¤í…Œ?¸ë¦¬???€ë¸”ëŸ¬",
+                    "name", "?ï¿½ë¸”ëŸ¬",
+                    "description", "?ï¿½í…Œ?ï¿½ë¦¬???ï¿½ë¸”ëŸ¬",
                     "price", 25000.00,
                     "pointsRequired", 200,
                     "stockQuantity", 30,
@@ -527,8 +535,8 @@ public class PointController {
             } else if (id == 3L) {
                 product = Map.of(
                     "id", 3L,
-                    "name", "?¬í™œ???¸íŠ¸",
-                    "description", "?¬í™œ??ì¢…ì´ë¡?ë§Œë“  ?¸íŠ¸",
+                    "name", "?ï¿½í™œ???ï¿½íŠ¸",
+                    "description", "?ï¿½í™œ??ì¢…ì´ï¿½?ë§Œë“  ?ï¿½íŠ¸",
                     "price", 8000.00,
                     "pointsRequired", 50,
                     "stockQuantity", 100,
@@ -538,8 +546,8 @@ public class PointController {
             } else if (id == 4L) {
                 product = Map.of(
                     "id", 4L,
-                    "name", "ì¹œí™˜ê²???,
-                    "description", "?¬í™œ???Œë¼?¤í‹± ??,
+                    "name", "ì¹œí™˜ï¿½???,
+                    "description", "?ï¿½í™œ???ï¿½ë¼?ï¿½í‹± ??,
                     "price", 5000.00,
                     "pointsRequired", 30,
                     "stockQuantity", 200,
@@ -549,8 +557,8 @@ public class PointController {
             } else if (id == 5L) {
                 product = Map.of(
                     "id", 5L,
-                    "name", "?ì½” ?”ë¶„",
-                    "description", "?¬í™œ???Œì¬ ?”ë¶„",
+                    "name", "?ï¿½ì½” ?ï¿½ë¶„",
+                    "description", "?ï¿½í™œ???ï¿½ì¬ ?ï¿½ë¶„",
                     "price", 35000.00,
                     "pointsRequired", 300,
                     "stockQuantity", 20,
@@ -567,7 +575,7 @@ public class PointController {
             } else {
                 return ResponseEntity.ok(Map.of(
                     "success", false,
-                    "message", "?í’ˆ??ì°¾ì„ ???†ìŠµ?ˆë‹¤."
+                    "message", "?ï¿½í’ˆ??ì°¾ì„ ???ï¿½ìŠµ?ï¿½ë‹¤."
                 ));
             }
         } catch (Exception e) {
@@ -577,7 +585,7 @@ public class PointController {
     }
     
     /**
-     * ?í’ˆ êµ¬ë§¤ (ì£¼ë¬¸ ?ì„±)
+     * ?ï¿½í’ˆ êµ¬ë§¤ (ì£¼ë¬¸ ?ï¿½ì„±)
      */
     @PostMapping("/orders")
     public ResponseEntity<Map<String, Object>> createOrder(@RequestBody Map<String, Object> request) {
@@ -586,13 +594,13 @@ public class PointController {
             Long productId = Long.valueOf(request.get("productId").toString());
             Integer quantity = Integer.valueOf(request.get("quantity").toString());
             
-            // ?í’ˆ ?•ë³´ ì¡°íšŒ
+            // Get product info
             List<Map<String, Object>> products = List.of(
-                Map.of("id", 1L, "name", "?ì½”ë°?, "description", "ì¹œí™˜ê²??¬í™œ???ì½”ë°?, "pointsRequired", 100, "price", 15000.0, "category", "LIFESTYLE", "stockQuantity", 50, "imageUrl", "/images/products/ecobag.jpg"),
-                Map.of("id", 2L, "name", "?€ë¸”ëŸ¬", "description", "?¤í…Œ?¸ë¦¬???€ë¸”ëŸ¬", "pointsRequired", 200, "price", 25000.0, "category", "LIFESTYLE", "stockQuantity", 30, "imageUrl", "/images/products/tumbler.jpg"),
-                Map.of("id", 3L, "name", "?¬í™œ???¸íŠ¸", "description", "?¬í™œ??ì¢…ì´ë¡?ë§Œë“  ?¸íŠ¸", "pointsRequired", 50, "price", 8000.0, "category", "STATIONERY", "stockQuantity", 100, "imageUrl", "/images/products/notebook.jpg"),
-                Map.of("id", 4L, "name", "ì¹œí™˜ê²???, "description", "?¬í™œ???Œë¼?¤í‹± ??, "pointsRequired", 30, "price", 5000.0, "category", "STATIONERY", "stockQuantity", 200, "imageUrl", "/images/products/pen.jpg"),
-                Map.of("id", 5L, "name", "?ì½” ?”ë¶„", "description", "?¬í™œ???Œì¬ ?”ë¶„", "pointsRequired", 300, "price", 35000.0, "category", "LIFESTYLE", "stockQuantity", 20, "imageUrl", "/images/products/plantpot.jpg")
+                Map.of("id", 1L, "name", "Eco Bag", "description", "Eco-friendly reusable bag", "pointsRequired", 100, "price", 15000.0, "category", "LIFESTYLE", "stockQuantity", 50, "imageUrl", "/images/products/ecobag.jpg"),
+                Map.of("id", 2L, "name", "Tumbler", "description", "Stainless steel tumbler", "pointsRequired", 200, "price", 25000.0, "category", "LIFESTYLE", "stockQuantity", 30, "imageUrl", "/images/products/tumbler.jpg"),
+                Map.of("id", 3L, "name", "Recycled Notebook", "description", "Notebook made from recycled paper", "pointsRequired", 50, "price", 8000.0, "category", "STATIONERY", "stockQuantity", 100, "imageUrl", "/images/products/notebook.jpg"),
+                Map.of("id", 4L, "name", "Eco Pen", "description", "Pen made from recycled plastic", "pointsRequired", 30, "price", 5000.0, "category", "STATIONERY", "stockQuantity", 200, "imageUrl", "/images/products/pen.jpg"),
+                Map.of("id", 5L, "name", "Eco Plant Pot", "description", "Plant pot made from recycled materials", "pointsRequired", 300, "price", 35000.0, "category", "LIFESTYLE", "stockQuantity", 20, "imageUrl", "/images/products/plantpot.jpg")
             );
             
             Map<String, Object> product = products.stream()
@@ -602,32 +610,32 @@ public class PointController {
             
             if (product == null) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "?í’ˆ??ì°¾ì„ ???†ìŠµ?ˆë‹¤."));
+                    .body(Map.of("success", false, "message", "Product not found."));
             }
             
             int pointsRequired = (Integer) product.get("pointsRequired");
             int totalPointsRequired = pointsRequired * quantity;
             
-            // ?¬ìš©???¬ì¸???•ì¸
+            // ?ï¿½ìš©???ï¿½ì¸???ï¿½ì¸
             var user = userService.getUserById(userId);
             if (user.getPointsTotal() < totalPointsRequired) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "message", "?¬ì¸?¸ê? ë¶€ì¡±í•©?ˆë‹¤."));
+                    .body(Map.of("success", false, "message", "Insufficient points."));
             }
             
-            // ?¬ì¸??ì°¨ê°
+            // ?ï¿½ì¸??ì°¨ê°
             int pointsToDeduct = -totalPointsRequired;
             pointHistoryService.createPointHistory(userId, "PRODUCT_PURCHASE", pointsToDeduct, 
-                product.get("name") + " êµ¬ë§¤ (" + quantity + "ê°?");
+                product.get("name") + " purchase (" + quantity + " qty)");
             
-            // ?¬ìš©??ì´??¬ì¸???…ë°?´íŠ¸
+            // ?ï¿½ìš©??ï¿½??ï¿½ì¸???ï¿½ë°?ï¿½íŠ¸
             userService.updateUserPoints(userId, pointsToDeduct);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "message", "?í’ˆ êµ¬ë§¤ê°€ ?„ë£Œ?˜ì—ˆ?µë‹ˆ??",
+                "message", "Product purchase completed successfully.",
                 "data", Map.of(
-                    "orderId", System.currentTimeMillis(), // ?„ì‹œ ì£¼ë¬¸ ID
+                    "orderId", System.currentTimeMillis(), // ?ï¿½ì‹œ ì£¼ë¬¸ ID
                     "productName", product.get("name"),
                     "quantity", quantity,
                     "pointsSpent", totalPointsRequired,
@@ -636,11 +644,11 @@ public class PointController {
             ));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                .body(Map.of("success", false, "message", "ì£¼ë¬¸ ?ì„± ?¤íŒ¨: " + e.getMessage()));
+                .body(Map.of("success", false, "message", "Order creation failed: " + e.getMessage()));
         }
     }
 
-    // ?´ë?ì§€ ì¡°íšŒ API
+    // ?ï¿½ï¿½?ì§€ ì¡°íšŒ API
     @GetMapping("/images/{imageId}")
     public ResponseEntity<?> getImage(@PathVariable Long imageId) {
         try {
@@ -658,13 +666,13 @@ public class PointController {
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            log.error("?´ë?ì§€ ì¡°íšŒ ?¤íŒ¨: {}", e.getMessage());
+            log.error("?ï¿½ï¿½?ì§€ ì¡°íšŒ ?ï¿½íŒ¨: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("?´ë?ì§€ ì¡°íšŒ???¤íŒ¨?ˆìŠµ?ˆë‹¤: " + e.getMessage());
+                    .body("?ï¿½ï¿½?ì§€ ì¡°íšŒ???ï¿½íŒ¨?ï¿½ìŠµ?ï¿½ë‹¤: " + e.getMessage());
         }
     }
 
-    // ?¤ì œ ?´ë?ì§€ ?Œì¼ ?œê³µ
+    // ?ï¿½ì œ ?ï¿½ï¿½?ì§€ ?ï¿½ì¼ ?ï¿½ê³µ
     @GetMapping("/images/file/{imageId}")
     public ResponseEntity<byte[]> getImageFile(@PathVariable Long imageId) {
         try {
@@ -672,22 +680,22 @@ public class PointController {
             if (image.isPresent()) {
                 Image img = image.get();
                 
-                // ?€?¥ëœ ?´ë?ì§€ ?°ì´?°ê? ?ˆëŠ”ì§€ ?•ì¸
+                // ?ï¿½?ï¿½ëœ ?ï¿½ï¿½?ì§€ ?ï¿½ì´?ï¿½ï¿½? ?ï¿½ëŠ”ì§€ ?ï¿½ì¸
                 if (img.getImageData() != null && img.getImageData().length > 0) {
-                    log.info("?´ë?ì§€ ?Œì¼ ?œê³µ: ID={}, ?¬ê¸°={} bytes", imageId, img.getImageData().length);
+                    log.info("?ï¿½ï¿½?ì§€ ?ï¿½ì¼ ?ï¿½ê³µ: ID={}, ?ï¿½ê¸°={} bytes", imageId, img.getImageData().length);
                     return ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(img.getContentType()))
                         .body(img.getImageData());
                 } else {
-                    log.warn("?´ë?ì§€ ?°ì´?°ê? ?†ìŒ: ID={}", imageId);
+                    log.warn("?ï¿½ï¿½?ì§€ ?ï¿½ì´?ï¿½ï¿½? ?ï¿½ìŒ: ID={}", imageId);
                     return ResponseEntity.notFound().build();
                 }
             } else {
-                log.warn("?´ë?ì§€ë¥?ì°¾ì„ ???†ìŒ: ID={}", imageId);
+                log.warn("?ï¿½ï¿½?ì§€ï¿½?ì°¾ì„ ???ï¿½ìŒ: ID={}", imageId);
                 return ResponseEntity.notFound().build();
             }
         } catch (Exception e) {
-            log.error("?´ë?ì§€ ?Œì¼ ?œê³µ ?¤íŒ¨: {}", e.getMessage());
+            log.error("?ï¿½ï¿½?ì§€ ?ï¿½ì¼ ?ï¿½ê³µ ?ï¿½íŒ¨: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
