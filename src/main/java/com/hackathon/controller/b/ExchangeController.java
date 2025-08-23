@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/exchanges")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class ExchangeController {
     
     private final ExchangeHistoryService exchangeHistoryService;

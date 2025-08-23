@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/points")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class PointController {
     
     private final PointHistoryService pointHistoryService;

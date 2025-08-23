@@ -7,7 +7,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/camera")
-@CrossOrigin(origins = "*")
 public class CameraController {
 
     /**

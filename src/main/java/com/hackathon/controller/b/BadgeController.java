@@ -4,6 +4,7 @@ import com.hackathon.dto.b.BadgeDto;
 import com.hackathon.entity.b.Badge;
 import com.hackathon.repository.b.BadgeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,10 +12,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/badges")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class BadgeController {
 
     private final BadgeRepository badgeRepository;

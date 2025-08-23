@@ -10,6 +10,7 @@ import com.hackathon.repository.b.ActivityHistoryRepository;
 import com.hackathon.repository.b.DailyActivityRepository;
 import com.hackathon.repository.b.WeeklyActivityRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,22 +19,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
-@RequestMapping("/api/activity")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/activities")
+@RequiredArgsConstructor
 public class ActivityController {
     
     private final ActivityHistoryRepository activityHistoryRepository;
     private final DailyActivityRepository dailyActivityRepository;
     private final WeeklyActivityRepository weeklyActivityRepository;
-    
-    public ActivityController(ActivityHistoryRepository activityHistoryRepository, 
-                           DailyActivityRepository dailyActivityRepository,
-                           WeeklyActivityRepository weeklyActivityRepository) {
-        this.activityHistoryRepository = activityHistoryRepository;
-        this.dailyActivityRepository = dailyActivityRepository;
-        this.weeklyActivityRepository = weeklyActivityRepository;
-    }
     
     // ===== 활동 기록 =====
     

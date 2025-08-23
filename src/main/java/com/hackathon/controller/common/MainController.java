@@ -15,7 +15,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/main")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class MainController {
 
     private final UserService userService;
