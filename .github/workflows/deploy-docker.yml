@@ -28,16 +28,9 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      # 4. JAR 파일 이름 확인 / 필요시 변경
-      - name: Ensure app.jar exists
-        run: |
-          echo "Checking if app.jar exists..."
-          if [ ! -f target/app.jar ]; then
-            echo "Renaming Maven output to app.jar"
-            mv target/*.jar target/app.jar
-          else
-            echo "app.jar already exists, skipping rename"
-          fi
+      # 4. JAR 이름 Docker용으로 변경
+      - name: Rename JAR for Docker
+        run: mv target/*.jar target/app.jar
 
       # 5. Docker Hub 로그인
       - name: Login to Docker Hub
@@ -66,3 +59,5 @@ jobs:
             docker rm hackathon-server || true
             echo "=== Running new container ==="
             docker run -d --name hackathon-server -p 8080:8080 $IMAGE_NAME
+            echo "=== Container status ==="
+            docker ps
