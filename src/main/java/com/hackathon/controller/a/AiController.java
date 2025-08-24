@@ -10,6 +10,8 @@ import com.hackathon.repository.a.ImageRepository;
 import com.hackathon.repository.a.PointHistoryRepository;
 import com.hackathon.service.a.AiResultService;
 import com.hackathon.service.a.ChatGptImageAnalysisService;
+import com.hackathon.service.a.UserService;
+import com.hackathon.service.b.BadgeService;
 import com.hackathon.service.common.WasteRecordService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -34,19 +36,25 @@ public class AiController {
     private final ChatGptImageAnalysisService chatGptImageAnalysisService;
     private final PointHistoryRepository pointHistoryRepository;
     private final WasteRecordService wasteRecordService;
+    private final UserService userService;
+    private final BadgeService badgeService;
     
-    public AiController(AiResultService aiResultService, ImageRepository imageRepository, ChatGptImageAnalysisService chatGptImageAnalysisService, PointHistoryRepository pointHistoryRepository, WasteRecordService wasteRecordService) {
+    public AiController(AiResultService aiResultService, ImageRepository imageRepository, ChatGptImageAnalysisService chatGptImageAnalysisService, PointHistoryRepository pointHistoryRepository, WasteRecordService wasteRecordService, UserService userService, BadgeService badgeService) {
         this.aiResultService = aiResultService;
         this.imageRepository = imageRepository;
         this.chatGptImageAnalysisService = chatGptImageAnalysisService;
         this.pointHistoryRepository = pointHistoryRepository;
         this.wasteRecordService = wasteRecordService;
+        this.userService = userService;
+        this.badgeService = badgeService;
         
         // 의존성 주입 상태 확인
         log.info("=== AiController 생성자 실행 ===");
         log.info("aiResultService: {}", aiResultService != null ? "주입됨" : "주입실패");
         log.info("imageRepository: {}", imageRepository != null ? "주입됨" : "주입실패");
         log.info("chatGptImageAnalysisService: {}", chatGptImageAnalysisService != null ? "주입됨" : "주입실패");
+        log.info("userService: {}", userService != null ? "주입됨" : "주입실패");
+        log.info("badgeService: {}", badgeService != null ? "주입됨" : "주입실패");
         log.info("=== AiController 생성자 완료 ===");
     }
     
@@ -125,13 +133,13 @@ public class AiController {
             
             log.info("✅ 이미지 저장 완료: ID={}, 파일명={}", savedImage.getId(), savedImage.getFileName());
             
-            // 포인트 히스토리에 저장 (10점을 받았을 때만)
-            if (result.getPointsEarned() == 10) {
+            // 포인트 히스토리에 저장 (재활용 가능한 경우에만)
+            if (result.getIsRecyclable()) {
                 try {
                     PointHistory pointHistory = new PointHistory();
                     pointHistory.setUserId(Long.parseLong(userId)); // 전달받은 사용자 ID 사용
                     pointHistory.setType("AI_ANALYSIS");
-                    pointHistory.setPoints(10); // 항상 10점
+                    pointHistory.setPoints(10); // 재활용 가능한 경우 10점
                     pointHistory.setDescription(
                         String.format("%s 분리수거로 10점 획득 (%s)", 
                             result.getWasteType(), 
@@ -143,23 +151,52 @@ public class AiController {
                     
                     pointHistoryRepository.save(pointHistory);
                     log.info("✅ 포인트 히스토리 저장 완료: 사용자 {} 분리수거로 10점 획득, 이미지ID={}", userId, savedImage.getId());
+                    
+                    // 사용자 총 포인트 업데이트
+                    try {
+                        userService.updateUserPoints(Long.parseLong(userId), 10);
+                        log.info("✅ 사용자 총 포인트 업데이트 완료: 사용자 {} +10점", userId);
+                    } catch (Exception e) {
+                        log.warn("⚠️ 사용자 포인트 업데이트 실패: {}", e.getMessage());
+                    }
                 } catch (Exception e) {
                     log.warn("⚠️ 포인트 히스토리 저장 실패: {}", e.getMessage());
                 }
+            } else {
+                log.info("ℹ️ 재활용 불가능한 폐기물: {} - 포인트 미지급", result.getClassification());
             }
             
-            // WasteRecord에도 저장 (대시보드용)
-            try {
-                wasteRecordService.createWasteRecord(
-                    Long.parseLong(userId), // 전달받은 사용자 ID 사용
-                    result.getWasteType(),
-                    result.getPointsEarned(),
-                    "/api/images/" + savedImage.getId() // 저장된 이미지 URL
-                );
-                log.info("✅ WasteRecord 저장 완료: 사용자 {} - {}, 이미지URL={}", userId, result.getWasteType(), "/api/images/" + savedImage.getId());
-            } catch (Exception e) {
-                log.warn("⚠️ WasteRecord 저장 실패: {}", e.getMessage());
-            }
+                               // WasteRecord에도 저장 (대시보드용)
+                   try {
+                       wasteRecordService.createWasteRecord(
+                           Long.parseLong(userId), // 전달받은 사용자 ID 사용
+                           result.getWasteType(),
+                           result.getPointsEarned(),
+                           "/api/images/" + savedImage.getId() // 저장된 이미지 URL
+                       );
+                       log.info("✅ WasteRecord 저장 완료: 사용자 {} - {}, 이미지URL={}", userId, result.getWasteType(), "/api/images/" + savedImage.getId());
+                   } catch (Exception e) {
+                       log.warn("⚠️ WasteRecord 저장 실패: {}", e.getMessage());
+                   }
+                   
+                   // 뱃지 획득 조건 체크 및 뱃지 지급
+                   try {
+                       log.info("🔍 뱃지 획득 조건 체크 시작: 사용자 {}", userId);
+                       // AI 분석 완료 후 뱃지 조건 체크
+                       badgeService.checkBadgeConditionsAfterAnalysis(Long.parseLong(userId));
+                       log.info("✅ 뱃지 조건 체크 완료: 사용자 {}", userId);
+                   } catch (Exception e) {
+                       log.warn("⚠️ 뱃지 조건 체크 실패: {}", e.getMessage());
+                   }
+                   
+                   // 추가: 모든 뱃지 조건 체크 (더 포괄적인 체크)
+                   try {
+                       log.info("🔍 모든 뱃지 조건 체크 시작: 사용자 {}", userId);
+                       badgeService.checkAllBadgeConditions(Long.parseLong(userId));
+                       log.info("✅ 모든 뱃지 조건 체크 완료: 사용자 {}", userId);
+                   } catch (Exception e) {
+                       log.warn("⚠️ 모든 뱃지 조건 체크 실패: {}", e.getMessage());
+                   }
             
             return ResponseEntity.ok(result);
             

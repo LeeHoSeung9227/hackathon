@@ -165,6 +165,50 @@
   transform: none;
 }
 
+.btn-warning {
+  background-color: #ffc107;
+  color: #212529;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.btn-warning:hover {
+  background-color: #e0a800;
+}
+
+.btn-warning:disabled {
+  background-color: #ffc107;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-info {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.btn-info:hover {
+  background-color: #138496;
+}
+
+.btn-info:disabled {
+  background-color: #17a2b8;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* 메시지 */
 .message {
   padding: 15px 20px;

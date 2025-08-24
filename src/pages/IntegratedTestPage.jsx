@@ -314,6 +314,46 @@ const IntegratedTestPage = () => {
     }
   };
 
+  // 뱃지 초기화
+  const initializeBadges = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/badges/initialize`);
+      
+      if (response.data.success) {
+        setMessage('기본 뱃지가 초기화되었습니다!');
+        fetchAllData();
+      } else {
+        setMessage('뱃지 초기화 실패: ' + response.data.error);
+      }
+    } catch (error) {
+      setMessage('뱃지 초기화 실패: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 모든 뱃지 조건 체크
+  const checkAllBadgeConditions = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/badges/check-all-conditions`, {
+        userId: parseInt(userId)
+      });
+      
+      if (response.data.success) {
+        setMessage('모든 뱃지 조건을 확인했습니다! 조건에 맞는 뱃지가 자동으로 지급되었을 수 있습니다.');
+        fetchAllData();
+      } else {
+        setMessage('뱃지 조건 체크 실패: ' + response.data.error);
+      }
+    } catch (error) {
+      setMessage('뱃지 조건 체크 실패: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 소스 타입 구분
   const getSourceType = (type, imageId) => {
     if (imageId) return '사진';
@@ -501,6 +541,30 @@ const IntegratedTestPage = () => {
           className="btn-secondary"
         >
           뱃지 획득
+        </button>
+      </div>
+
+      {/* 뱃지 초기화 */}
+      <div className="section">
+        <h2>🔄 뱃지 초기화</h2>
+        <button 
+          onClick={initializeBadges} 
+          disabled={loading}
+          className="btn-warning"
+        >
+          {loading ? '초기화 중...' : '기본 뱃지 초기화'}
+        </button>
+      </div>
+
+      {/* 모든 뱃지 조건 체크 */}
+      <div className="section">
+        <h2>🔍 모든 뱃지 조건 체크</h2>
+        <button 
+          onClick={checkAllBadgeConditions} 
+          disabled={loading}
+          className="btn-info"
+        >
+          {loading ? '체크 중...' : '모든 뱃지 조건 확인'}
         </button>
       </div>
 
