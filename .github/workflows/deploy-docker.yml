@@ -31,6 +31,13 @@ jobs:
           gradle --version
           echo "=== Gradle 빌드 시작 ==="
           gradle clean bootJar -x test
+      
+      - name: Prepare JAR for Docker
+        run: |
+          echo "=== JAR 파일 준비 ==="
+          ls -la build/libs/
+          cp build/libs/*.jar app.jar
+          ls -la app.jar
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
