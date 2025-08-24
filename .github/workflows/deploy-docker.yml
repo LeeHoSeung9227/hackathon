@@ -33,7 +33,7 @@ jobs:
           gradle-version: '8.5'
 
       - name: Build JAR with Gradle
-        run: gradle clean bootJar --info
+        run: gradle clean bootJar --info --stacktrace
 
       - name: Prepare app.jar
         run: |
