@@ -34,7 +34,7 @@ const Main = () => {
       const userId = localStorage.getItem('userId') || '1';
       
       // 사용자 정보 조회
-      const userResponse = await axios.get(`http://localhost:8082/api/users/${userId}`);
+      const userResponse = await axios.get(`http://43.203.226.243:8080/api/users/${userId}`);
       if (userResponse.data.success) {
         const userData = userResponse.data.data;
         setUser({
@@ -46,7 +46,7 @@ const Main = () => {
       }
 
       // 최근 활동 내역 조회
-      const pointsResponse = await axios.get(`http://localhost:8082/api/points/user/${userId}/type/all`);
+      const pointsResponse = await axios.get(`http://43.203.226.243:8080/api/points/user/${userId}/type/all`);
       if (Array.isArray(pointsResponse.data)) {
         const recentPoints = pointsResponse.data.slice(0, 3).map(point => ({
           type: point.changeType === 'EARNED' ? '획득' : '사용',
@@ -59,7 +59,7 @@ const Main = () => {
 
       // 교환 내역 조회
       try {
-        const exchangeResponse = await axios.get(`http://localhost:8082/api/exchanges/user/${userId}`);
+        const exchangeResponse = await axios.get(`http://43.203.226.243:8080/api/exchanges/user/${userId}`);
         if (exchangeResponse.data.success && exchangeResponse.data.data) {
           const recentExchanges = exchangeResponse.data.data.slice(0, 2).map(exchange => ({
             type: '교환',
@@ -75,7 +75,7 @@ const Main = () => {
 
       // 뱃지 정보 조회
       try {
-        const badgeResponse = await axios.get(`http://localhost:8082/api/badges/user/${userId}`);
+        const badgeResponse = await axios.get(`http://43.203.226.243:8080/api/badges/user/${userId}`);
         if (badgeResponse.data.success && badgeResponse.data.data) {
           const earnedBadges = badgeResponse.data.data.filter(badge => badge.earned);
           if (earnedBadges.length > 0) {
@@ -106,7 +106,7 @@ const Main = () => {
       
       // 1. 사용자 정보 테스트
       setDebugInfo(prev => prev + '1. 사용자 정보 조회 중...\n');
-      const userResponse = await axios.get(`http://localhost:8082/api/users/${userId}`);
+      const userResponse = await axios.get(`http://43.203.226.243:8080/api/users/${userId}`);
       if (userResponse.data.success) {
         const userData = userResponse.data.data;
         setDebugInfo(prev => prev + `✅ 사용자 정보 성공!\n- 닉네임: ${userData.nickname || userData.name}\n- 포인트: ${userData.pointsTotal}\n- 레벨: ${userData.level}\n\n`);
@@ -116,7 +116,7 @@ const Main = () => {
 
       // 2. 포인트 히스토리 테스트
       setDebugInfo(prev => prev + '2. 포인트 히스토리 조회 중...\n');
-      const pointsResponse = await axios.get(`http://localhost:8082/api/points/user/${userId}/type/all`);
+      const pointsResponse = await axios.get(`http://43.203.226.243:8080/api/points/user/${userId}/type/all`);
       if (Array.isArray(pointsResponse.data)) {
         setDebugInfo(prev => prev + `✅ 포인트 히스토리 성공! (${pointsResponse.data.length}개)\n\n`);
       } else {
@@ -126,7 +126,7 @@ const Main = () => {
       // 3. 교환 내역 테스트
       setDebugInfo(prev => prev + '3. 교환 내역 조회 중...\n');
       try {
-        const exchangeResponse = await axios.get(`http://localhost:8082/api/exchanges/user/${userId}`);
+        const exchangeResponse = await axios.get(`http://43.203.226.243:8080/api/exchanges/user/${userId}`);
         if (exchangeResponse.data.success) {
           setDebugInfo(prev => prev + `✅ 교환 내역 성공! (${exchangeResponse.data.data?.length || 0}개)\n\n`);
         } else {
@@ -299,7 +299,7 @@ const Main = () => {
                 <span className="activity-item">{activity.item}</span>
               </div>
               <div className="activity-points">
-                <span className={`points ${activity.points.startsWith('+') ? 'positive' : 'negative'}`}>
+                <span className={`points ${typeof activity.points === 'string' && activity.points.startsWith('+') ? 'positive' : 'negative'}`}>
                   {activity.points}
                 </span>
                 <span className="date">{activity.date}</span>

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>코드 비교 - 수정 전 vs 수정 후</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .code-section {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .code-section h2 {
+            margin-top: 0;
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            text-align: center;
+        }
+        .before h2 {
+            background: #dc3545;
+        }
+        .after h2 {
+            background: #28a745;
+        }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .added {
+            background: #d4edda;
+            color: #155724;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .removed {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .summary {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .summary h3 {
+            color: #007bff;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .change-item {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .change-item strong {
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 코드 비교: 수정 전 vs 수정 후</h1>
+        
+        <div class="comparison">
+            <div class="code-section before">
+                <h2>❌ 수정 전 (문제가 있는 코드)</h2>
+                <div class="code-block">
+// src/api/tacoApi.ts (수정 전)
+import apiClient from "./apiClient";
+import axios from "axios";
+
+export async function analyzeImage(file: File): Promise<string> {
+  try {
+    const formData = new FormData();
+    formData.append("image", file);
+
+    const response = await apiClient.post("api/ai/analyze", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        throw new Error(error.response.data);
+      }
+      throw new Error(error.message);
+    }
+    throw error;
+  }
+}
+
+// src/api/apiClient.ts
+import axios from "axios";
+
+// 개발 단계용 고정 토큰 (나중엔 로그인 인증 결과로 대체)
+const ACCESS_TOKEN = "cc25e466-fc6c-4d24-8a63-6f3cba41cbd0";
+
+// 공통 axios 인스턴스
+const apiClient = axios.create({
+  baseURL: "http://43.203.226.243:8080", // 실제 서버 주소 작성
+  headers: {
+    Authorization: `Bearer ${ACCESS_TOKEN}`,
+  },
+});
+
+export default apiClient;
+
+// 사진 촬영 및 백엔드 전송
+const capturePhoto = async () => {
+  if (!videoRef.current || !canvasRef.current) return;
+
+  setIsLoading(true);
+
+  try {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    // 비디오 프레임을 캔버스에 그림
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0);
+
+    // 캔버스를 Blob으로 변환 후 API 호출
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        setIsLoading(false);
+        alert("이미지 생성 실패");
+        return;
+      }
+
+      try {
+        const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+        const result = await analyzeImage(file);  // ← 이 줄을 수정
+        // 모델 분석 결과를 result 변수에 받음
+
+        // 성공 시 result를 화면에 출력하거나 처리 (예제: alert)
+        alert("분석 결과:\n" + result);
+
+        // 필요 시 다른 페이지 이동 등 처리 가능
+        // navigate('/Success'); 혹은 setResult(result) 등
+
+      } catch (error: any) {
+        alert("분석 실패: " + error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 'image/jpeg', 0.8);
+
+  } catch (error) {
+    setIsLoading(false);
+    alert("사진 촬영에 실패했습니다.");
+  }
+};
+                </div>
+            </div>
+            
+            <div class="code-section after">
+                <h2>✅ 수정 후 (해결된 코드)</h2>
+                <div class="code-block">
+// src/api/tacoApi.ts (수정 후)
+import apiClient from "./apiClient";
+import axios from "axios";
+
+export async function analyzeImage(file: File, userId: string): Promise<string> {
+  try {
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("userId", userId);  // ✅ userId 추가
+
+    const response = await apiClient.post("api/ai/analyze", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return response.data;
+  } catch (error: any) {
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        throw new Error(error.response.data);
+      }
+      throw new Error(error.message);
+    }
+    throw error;
+  }
+}
+
+// src/api/apiClient.ts
+import axios from "axios";
+
+// 개발 단계용 고정 토큰 (나중엔 로그인 인증 결과로 대체)
+const ACCESS_TOKEN = "cc25e466-fc6c-4d24-8a63-6f3cba41cbd0";
+
+// 공통 axios 인스턴스
+const apiClient = axios.create({
+  baseURL: "http://43.203.226.243:8080", // 실제 서버 주소 작성
+  headers: {
+    Authorization: `Bearer ${ACCESS_TOKEN}`,
+  },
+});
+
+export default apiClient;
+
+// 사진 촬영 및 백엔드 전송
+const capturePhoto = async () => {
+  if (!videoRef.current || !canvasRef.current) return;
+
+  setIsLoading(true);
+
+  try {
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    const context = canvas.getContext('2d');
+    if (!context) return;
+
+    // 비디오 프레임을 캔버스에 그림
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0);
+
+    // 캔버스를 Blob으로 변환 후 API 호출
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        setIsLoading(false);
+        alert("이미지 생성 실패");
+        return;
+      }
+
+      try {
+        const file = new File([blob], 'capture.jpg', { type: 'image/jpeg' });
+        const result = await analyzeImage(file, "사용자ID");  // ✅ userId 추가
+        // 모델 분석 결과를 result 변수에 받음
+
+        // 성공 시 result를 화면에 출력하거나 처리 (예제: alert)
+        alert("분석 결과:\n" + result);
+
+        // 필요 시 다른 페이지 이동 등 처리 가능
+        // navigate('/Success'); 혹은 setResult(result) 등
+
+      } catch (error: any) {
+        alert("분석 실패: " + error.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 'image/jpeg', 0.8);
+
+  } catch (error) {
+    setIsLoading(false);
+    alert("사진 촬영에 실패했습니다.");
+  }
+};
+                </div>
+            </div>
+        </div>
+        
+        <div class="summary">
+            <h3>📋 주요 변경사항 요약</h3>
+            
+            <div class="change-item">
+                <strong>1. 함수 파라미터 추가</strong><br>
+                <span class="removed">수정 전:</span> <code>analyzeImage(file: File)</code><br>
+                <span class="added">수정 후:</span> <code>analyzeImage(file: File, userId: string)</code>
+            </div>
+            
+            <div class="change-item">
+                <strong>2. FormData에 userId 포함</strong><br>
+                <span class="removed">수정 전:</span> <code>formData.append("image", file);</code><br>
+                <span class="added">수정 후:</span> <code>formData.append("image", file); formData.append("userId", userId);</code>
+            </div>
+            
+            <div class="change-item">
+                <strong>3. 함수 호출 시 userId 전달</strong><br>
+                <span class="removed">수정 전:</span> <code>analyzeImage(file)</code><br>
+                <span class="added">수정 후:</span> <code>analyzeImage(file, "사용자ID")</code>
+            </div>
+            
+            <div class="change-item">
+                <strong>🎯 결과:</strong> 백엔드에서 요구하는 <code>userId</code> 파라미터가 포함되어 500 오류가 해결됩니다!
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -34,7 +34,7 @@ function Login() {
 
     try {
       // 먼저 기존 사용자 검색
-      const searchResponse = await axios.get(`http://localhost:8082/api/users/search`, {
+              const searchResponse = await axios.get(`http://43.203.226.243:8080/api/users/search`, {
         params: {
           nickname: formData.nickname,
           school: formData.school,
@@ -87,7 +87,7 @@ function Login() {
       if (error.response?.status === 404) {
         // 사용자를 찾을 수 없는 경우 - 새 계정 생성 시도
         try {
-          const signupResponse = await axios.post('http://localhost:8082/api/auth/signup/request', {
+          const signupResponse = await axios.post('http://43.203.226.243:8080/api/auth/signup/request', {
             nickname: formData.nickname,
             school: formData.school,
             college: formData.college,

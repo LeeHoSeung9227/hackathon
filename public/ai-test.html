@@ -254,6 +254,40 @@
             </div>
         </div>
 
+        <!-- 상품교환 시스템 -->
+        <div class="test-section">
+            <h2>🛍️ 상품교환 시스템</h2>
+            <div style="margin-bottom: 20px;">
+                <button onclick="loadProducts()" class="btn-primary">📋 상품 목록 조회</button>
+                <button onclick="checkExchangeHistory()" class="btn-info">📜 교환 내역 조회</button>
+                <button onclick="showExchangeForm()" class="btn-success">🛒 상품 교환하기</button>
+            </div>
+            <div id="productResult" class="result-box"></div>
+        </div>
+
+        <!-- 랭킹 시스템 -->
+        <div class="test-section">
+            <h2>🏆 랭킹 시스템</h2>
+            <div style="margin-bottom: 20px;">
+                <button onclick="checkIndividualRanking()" class="btn-primary">👤 개인 랭킹 (Top 30)</button>
+                <button onclick="checkCollegeRanking()" class="btn-info">🏫 단과대 랭킹 (Top 30)</button>
+                <button onclick="checkCampusRanking()" class="btn-warning">🌍 캠퍼스 랭킹 (Top 30)</button>
+                <button onclick="checkUserRanking()" class="btn-success">🔍 내 랭킹 확인</button>
+            </div>
+            <div id="rankingResult" class="result-box"></div>
+        </div>
+
+        <!-- 레벨 시스템 -->
+        <div class="test-section">
+            <h2>⭐ 레벨 시스템</h2>
+            <div style="margin-bottom: 20px;">
+                <button onclick="checkUserLevel()" class="btn-primary">👤 내 레벨 정보</button>
+                <button onclick="checkLevelRequirements()" class="btn-info">📊 레벨업 조건</button>
+                <button onclick="simulateLevelUp()" class="btn-warning">🚀 레벨업 시뮬레이션</button>
+            </div>
+            <div id="levelResult" class="result-box"></div>
+        </div>
+
         <!-- 뱃지 관리 -->
         <div class="test-section">
             <h2>🎖️ 뱃지 관리</h2>
@@ -278,7 +312,11 @@
             currentUserId = userId;
             
             try {
-                const response = await fetch(`${BASE_URL}/api/users/${userId}`);
+                const response = await fetch(`${BASE_URL}/api/users/${userId}`, {
+                    mode: 'cors',
+                    credentials: 'include',
+                    referrerPolicy: 'no-referrer-when-downgrade'
+                });
                 const data = await response.json();
                 
                 if (response.ok) {
@@ -344,7 +382,10 @@
                 
                 const analysisResponse = await fetch(`${BASE_URL}/api/ai/analyze`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    mode: 'cors',
+                    credentials: 'include',
+                    referrerPolicy: 'no-referrer-when-downgrade'
                 });
                 
                 if (!analysisResponse.ok) {
@@ -649,6 +690,366 @@
                 }
             } catch (error) {
                 alert(`❌ 뱃지 조건 체크 중 오류 발생: ${error.message}`);
+            }
+        }
+
+        // 상품 목록 조회
+        async function loadProducts() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/products`);
+                const data = await response.json();
+                
+                if (response.ok && Array.isArray(data)) {
+                    const productsHtml = data.map(product => `
+                        <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0; background: white;">
+                            <h4 style="margin: 0 0 10px 0; color: #495057;">${product.name}</h4>
+                            <p style="margin: 5px 0;"><strong>설명:</strong> ${product.description}</p>
+                            <p style="margin: 5px 0;"><strong>필요 포인트:</strong> <span style="color: #dc3545; font-weight: bold;">${product.pointsRequired}P</span></p>
+                            <p style="margin: 5px 0;"><strong>재고:</strong> ${product.stockQuantity || '무제한'}</p>
+                            <p style="margin: 5px 0;"><strong>카테고리:</strong> ${product.category}</p>
+                            <button onclick="exchangeProduct(${product.id}, '${product.name}', ${product.pointsRequired})" class="btn-success" style="margin-top: 10px;">
+                                🛒 교환하기 (${product.pointsRequired}P)
+                            </button>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('productResult').innerHTML = `
+                        <h3>✅ 상품 목록 조회 성공 (${data.length}개)</h3>
+                        <div style="margin-top: 15px;">
+                            ${productsHtml}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('productResult').innerHTML = `<p class="error">❌ 상품 조회 실패: ${data.error || '알 수 없는 오류'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('productResult').innerHTML = `<p class="error">❌ 오류: ${error.message}</p>`;
+            }
+        }
+
+        // 상품 교환
+        async function exchangeProduct(productId, productName, requiredPoints) {
+            if (!confirm(`"${productName}"을(를) ${requiredPoints}P로 교환하시겠습니까?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${BASE_URL}/api/exchanges`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: currentUserId,
+                        productId: productId,
+                        points: requiredPoints
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(`✅ "${productName}" 교환 완료! ${requiredPoints}P가 차감되었습니다.`);
+                    // 교환 후 포인트와 통계 업데이트
+                    await updateStats();
+                    await loadUserData();
+                    document.getElementById('productResult').innerHTML = `
+                        <h3>✅ 상품 교환 성공!</h3>
+                        <p><strong>상품:</strong> ${productName}</p>
+                        <p><strong>차감된 포인트:</strong> ${requiredPoints}P</p>
+                        <p><strong>교환 시간:</strong> ${new Date().toLocaleString('ko-KR')}</p>
+                    `;
+                } else {
+                    alert(`❌ 교환 실패: ${data.error || '알 수 없는 오류'}`);
+                }
+            } catch (error) {
+                alert(`❌ 교환 중 오류 발생: ${error.message}`);
+            }
+        }
+
+        // 교환 내역 조회
+        async function checkExchangeHistory() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/exchanges/user/${currentUserId}`);
+                const data = await response.json();
+                
+                if (response.ok && data.data) {
+                    const exchangesHtml = data.data.map(exchange => `
+                        <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0; background: white;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-weight: bold; color: #495057;">${exchange.productName || '상품'}</span>
+                                <span style="font-weight: bold; color: #dc3545;">-${exchange.pointsUsed}P</span>
+                            </div>
+                            <p style="margin: 5px 0;"><strong>교환 시간:</strong> ${new Date(exchange.createdAt).toLocaleString('ko-KR')}</p>
+                            <p style="margin: 5px 0;"><strong>상태:</strong> ${exchange.status || '완료'}</p>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('productResult').innerHTML = `
+                        <h3>✅ 교환 내역 조회 성공 (${data.data.length}개)</h3>
+                        <div style="margin-top: 15px;">
+                            ${exchangesHtml}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('productResult').innerHTML = `<p class="error">❌ 교환 내역 조회 실패: ${data.error || '내역이 없습니다'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('productResult').innerHTML = `<p class="error">❌ 오류: ${error.message}</p>`;
+            }
+        }
+
+        // 상품 교환 폼 표시
+        function showExchangeForm() {
+            document.getElementById('productResult').innerHTML = `
+                <h3>🛒 상품 교환</h3>
+                <p>상품 목록을 먼저 조회한 후 원하는 상품의 "교환하기" 버튼을 클릭하세요.</p>
+                <button onclick="loadProducts()" class="btn-primary">📋 상품 목록 조회</button>
+            `;
+        }
+
+        // 개인 랭킹 조회 (Top 30)
+        async function checkIndividualRanking() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/rankings/individuals?limit=30`);
+                const data = await response.json();
+                
+                if (response.ok && data.data) {
+                    const rankingHtml = data.data.map((user, index) => `
+                        <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0; background: white;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-weight: bold; color: #007bff; font-size: 1.2em;">🏆 ${index + 1}위</span>
+                                <span style="font-weight: bold; color: #28a745; font-size: 1.1em;">${user.points}P</span>
+                            </div>
+                            <p style="margin: 5px 0;"><strong>사용자:</strong> ${user.name || user.username}</p>
+                            <p style="margin: 5px 0;"><strong>단과대:</strong> ${user.college || 'N/A'}</p>
+                            <p style="margin: 5px 0;"><strong>캠퍼스:</strong> ${user.campus || 'N/A'}</p>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('rankingResult').innerHTML = `
+                        <h3>✅ 개인 랭킹 (Top 30)</h3>
+                        <div style="margin-top: 15px;">
+                            ${rankingHtml}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('rankingResult').innerHTML = `<p class="error">❌ 개인 랭킹 조회 실패: ${data.error || '랭킹 데이터가 없습니다'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('rankingResult').innerHTML = `
+                    <h3>⚠️ 랭킹 시스템 점검 중</h3>
+                    <p class="error">백엔드 랭킹 서비스에 일시적인 문제가 있습니다.</p>
+                    <p><strong>오류 내용:</strong> ${error.message}</p>
+                    <p><strong>해결 방법:</strong> 잠시 후 다시 시도해주세요.</p>
+                `;
+            }
+        }
+
+        // 단과대 랭킹 조회 (Top 30)
+        async function checkCollegeRanking() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/rankings/colleges?limit=30`);
+                const data = await response.json();
+                
+                if (response.ok && data.data) {
+                    const rankingHtml = data.data.map((college, index) => `
+                        <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0; background: white;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-weight: bold; color: #007bff; font-size: 1.2em;">🏆 ${index + 1}위</span>
+                                <span style="font-weight: bold; color: #28a745; font-size: 1.1em;">${college.score}P</span>
+                            </div>
+                            <p style="margin: 5px 0;"><strong>단과대:</strong> ${college.college}</p>
+                            <p style="margin: 5px 0;"><strong>멤버 수:</strong> ${college.members}명</p>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('rankingResult').innerHTML = `
+                        <h3>✅ 단과대 랭킹 (Top 30)</h3>
+                        <div style="margin-top: 15px;">
+                            ${rankingHtml}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('rankingResult').innerHTML = `<p class="error">❌ 단과대 랭킹 조회 실패: ${data.error || '랭킹 데이터가 없습니다'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('rankingResult').innerHTML = `<p class="error">❌ 오류: ${error.message}</p>`;
+            }
+        }
+
+        // 캠퍼스 랭킹 조회 (Top 30)
+        async function checkCampusRanking() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/rankings/campuses?limit=30`);
+                const data = await response.json();
+                
+                if (response.ok && data.data) {
+                    const rankingHtml = data.data.map((campus, index) => `
+                        <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0; background: white;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-weight: bold; color: #007bff; font-size: 1.2em;">🏆 ${index + 1}위</span>
+                                <span style="font-weight: bold; color: #28a745; font-size: 1.1em;">${campus.score}P</span>
+                            </div>
+                            <p style="margin: 5px 0;"><strong>캠퍼스:</strong> ${campus.campus}</p>
+                            <p style="margin: 5px 0;"><strong>멤버 수:</strong> ${campus.members}명</p>
+                        </div>
+                    `).join('');
+                    
+                    document.getElementById('rankingResult').innerHTML = `
+                        <h3>✅ 캠퍼스 랭킹 (Top 30)</h3>
+                        <div style="margin-top: 15px;">
+                            ${rankingHtml}
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('rankingResult').innerHTML = `<p class="error">❌ 캠퍼스 랭킹 조회 실패: ${data.error || '랭킹 데이터가 없습니다'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('rankingResult').innerHTML = `<p class="error">❌ 오류: ${error.message}</p>`;
+            }
+        }
+
+        // 내 랭킹 확인
+        async function checkUserRanking() {
+            try {
+                // 개인 랭킹에서 내 순위 찾기
+                const response = await fetch(`${BASE_URL}/api/rankings/individuals?limit=100`);
+                const data = await response.json();
+                
+                if (response.ok && data.data) {
+                    const myRanking = data.data.find(user => user.userId == currentUserId);
+                    
+                    if (myRanking) {
+                        const rank = data.data.findIndex(user => user.userId == currentUserId) + 1;
+                        document.getElementById('rankingResult').innerHTML = `
+                            <h3>✅ 내 랭킹 정보</h3>
+                            <div style="border: 1px solid #28a745; border-radius: 8px; padding: 20px; margin: 15px 0; background: #f8fff9;">
+                                <h4 style="margin: 0 0 15px 0; color: #28a745;">🏆 ${rank}위</h4>
+                                <p style="margin: 8px 0;"><strong>포인트:</strong> ${myRanking.points}P</p>
+                                <p style="margin: 8px 0;"><strong>단과대:</strong> ${myRanking.college || 'N/A'}</p>
+                                <p style="margin: 8px 0;"><strong>캠퍼스:</strong> ${myRanking.campus || 'N/A'}</p>
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('rankingResult').innerHTML = `
+                            <h3>ℹ️ 내 랭킹 정보</h3>
+                            <p>현재 Top 100에 포함되지 않았습니다.</p>
+                            <p>더 많은 포인트를 모아서 랭킹에 도전해보세요!</p>
+                        `;
+                    }
+                } else {
+                    document.getElementById('rankingResult').innerHTML = `<p class="error">❌ 랭킹 조회 실패: ${data.error || '랭킹 데이터가 없습니다'}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('rankingResult').innerHTML = `<p class="error">❌ 오류: ${error.message}</p>`;
+            }
+        }
+
+        // 내 레벨 정보 확인
+        async function checkUserLevel() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/users/${currentUserId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const user = data.data;
+                    const currentLevel = user.level || 1;
+                    const currentPoints = user.pointsTotal || 0;
+                    
+                    // 레벨별 필요 포인트 계산 (예시)
+                    const nextLevelPoints = Math.pow(currentLevel + 1, 2) * 100;
+                    const progress = Math.min((currentPoints / nextLevelPoints) * 100, 100);
+                    
+                    document.getElementById('levelResult').innerHTML = `
+                        <h3>✅ 내 레벨 정보</h3>
+                        <div style="border: 1px solid #007bff; border-radius: 8px; padding: 20px; margin: 15px 0; background: #f8fbff;">
+                            <h4 style="margin: 0 0 15px 0; color: #007bff;">⭐ Level ${currentLevel}</h4>
+                            <p style="margin: 8px 0;"><strong>현재 포인트:</strong> ${currentPoints.toLocaleString()}P</p>
+                            <p style="margin: 8px 0;"><strong>다음 레벨까지:</strong> ${nextLevelPoints.toLocaleString()}P</p>
+                            <div style="margin: 15px 0;">
+                                <div style="background: #e9ecef; border-radius: 10px; height: 20px; overflow: hidden;">
+                                    <div style="background: #007bff; height: 100%; width: ${progress}%; transition: width 0.3s ease;"></div>
+                                </div>
+                                <p style="margin: 5px 0; font-size: 12px; color: #6c757d;">진행률: ${progress.toFixed(1)}%</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('levelResult').innerHTML = `<p class="error">❌ 사용자 정보 조회 실패: ${data.error}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('levelResult').innerHTML = `<p class="error">❌ 오류: ${error.message}</p>`;
+            }
+        }
+
+        // 레벨업 조건 확인
+        function checkLevelRequirements() {
+            document.getElementById('levelResult').innerHTML = `
+                <h3>📊 레벨업 조건</h3>
+                <div style="margin-top: 15px;">
+                    <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0; background: white;">
+                        <h4 style="margin: 0 0 10px 0; color: #495057;">Level 1 → 2</h4>
+                        <p style="margin: 5px 0;"><strong>필요 포인트:</strong> 400P</p>
+                        <p style="margin: 5px 0;"><strong>획득 방법:</strong> AI 이미지 분석, 활동 참여</p>
+                    </div>
+                    <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0; background: white;">
+                        <h4 style="margin: 0 0 10px 0; color: #495057;">Level 2 → 3</h4>
+                        <p style="margin: 5px 0;"><strong>필요 포인트:</strong> 900P</p>
+                        <p style="margin: 5px 0;"><strong>획득 방법:</strong> 지속적인 활동 참여</p>
+                    </div>
+                    <div style="border: 1px solid #dee2e6; border-radius: 8px; padding: 15px; margin: 10px 0; background: white;">
+                        <h4 style="margin: 0 0 10px 0; color: #495057;">Level 3 → 4</h4>
+                        <p style="margin: 5px 0;"><strong>필요 포인트:</strong> 1,600P</p>
+                        <p style="margin: 5px 0;"><strong>획득 방법:</strong> 뱃지 획득, 상품 교환</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 레벨업 시뮬레이션
+        async function simulateLevelUp() {
+            try {
+                const response = await fetch(`${BASE_URL}/api/users/${currentUserId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    const user = data.data;
+                    const currentLevel = user.level || 1;
+                    const currentPoints = user.pointsTotal || 0;
+                    
+                    // 레벨업 조건 체크
+                    const nextLevelPoints = Math.pow(currentLevel + 1, 2) * 100;
+                    
+                    if (currentPoints >= nextLevelPoints) {
+                        document.getElementById('levelResult').innerHTML = `
+                            <h3>🚀 레벨업 가능!</h3>
+                            <div style="border: 1px solid #28a745; border-radius: 8px; padding: 20px; margin: 15px 0; background: #f8fff9;">
+                                <h4 style="margin: 0 0 15px 0; color: #28a745;">🎉 Level ${currentLevel} → ${currentLevel + 1}</h4>
+                                <p style="margin: 8px 0;"><strong>현재 포인트:</strong> ${currentPoints.toLocaleString()}P</p>
+                                <p style="margin: 8px 0;"><strong>필요 포인트:</strong> ${nextLevelPoints.toLocaleString()}P</p>
+                                <p style="margin: 8px 0; color: #28a745;"><strong>✅ 레벨업 조건 충족!</strong></p>
+                                <p style="margin: 8px 0; font-size: 12px; color: #6c757d;">레벨업은 자동으로 처리됩니다.</p>
+                            </div>
+                        `;
+                    } else {
+                        const remaining = nextLevelPoints - currentPoints;
+                        document.getElementById('levelResult').innerHTML = `
+                            <h3>📊 레벨업 현황</h3>
+                            <div style="border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin: 15px 0; background: #fffbf0;">
+                                <h4 style="margin: 0 0 15px 0; color: #ffc107;">⏳ Level ${currentLevel} 유지</h4>
+                                <p style="margin: 8px 0;"><strong>현재 포인트:</strong> ${currentPoints.toLocaleString()}P</p>
+                                <p style="margin: 8px 0;"><strong>필요 포인트:</strong> ${nextLevelPoints.toLocaleString()}P</p>
+                                <p style="margin: 8px 0; color: #dc3545;"><strong>❌ 레벨업까지 ${remaining.toLocaleString()}P 더 필요</strong></p>
+                                <p style="margin: 8px 0; font-size: 12px; color: #6c757d;">AI 이미지 분석을 통해 포인트를 모아보세요!</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    document.getElementById('levelResult').innerHTML = `<p class="error">❌ 사용자 정보 조회 실패: ${data.error}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('levelResult').innerHTML = `<p class="error">❌ 오류: ${error.message}</p>`;
             }
         }
 

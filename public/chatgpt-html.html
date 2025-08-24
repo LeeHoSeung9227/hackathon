@@ -169,7 +169,7 @@
             formData.append('userId', '1'); // 테스트용 사용자 ID
 
             try {
-                const response = await fetch('http://localhost:8082/api/ai/analyze', {
+                const response = await fetch('http://43.203.226.243:8080/api/ai/analyze', {
                     method: 'POST',
                     body: formData
                 });

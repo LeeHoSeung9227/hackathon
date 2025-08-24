@@ -28,7 +28,7 @@ const IntegratedTestPage = () => {
   // 뱃지 관련
   const [selectedBadge, setSelectedBadge] = useState('');
   
-  const API_BASE_URL = 'http://localhost:8082';
+  const API_BASE_URL = 'http://43.203.226.243:8080';
 
   // 초기 데이터 로드
   useEffect(() => {

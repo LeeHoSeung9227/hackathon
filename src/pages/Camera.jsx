@@ -41,7 +41,7 @@ function Camera() {
     fileInputRef.current.click();
   };
 
-  // TACO 모델로 쓰레기 탐지
+  // AI 이미지 분석
   const handleWasteRecognition = async () => {
     if (!selectedImage) {
       alert('이미지를 선택해주세요!');
@@ -55,9 +55,10 @@ function Camera() {
       // FormData 생성
       const formData = new FormData();
       formData.append('image', selectedImage);
+      formData.append('userId', '1'); // 테스트용 사용자 ID
 
-      // TACO 모델 API 호출
-      const response = await axios.post('/api/taco/detect', formData, {
+      // AI 분석 API 호출
+      const response = await axios.post('/api/ai/analyze', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -66,49 +67,26 @@ function Camera() {
       const apiResult = response.data;
 
       if (apiResult.success) {
-        // 탐지 성공
-        const detectedCount = apiResult.detections || 0;
-        const wasteTypes = apiResult.wasteTypes || [];
-        const confidence = apiResult.confidence || [];
-        
-        if (detectedCount > 0) {
-          // 쓰레기 탐지됨
-          const avgConfidence = confidence.reduce((a, b) => a + b, 0) / confidence.length;
-          const earnedPoints = Math.floor(avgConfidence * 20); // 신뢰도에 따른 점수
-          
-          setResult({
-            success: true,
-            wasteType: `쓰레기 ${detectedCount}개`,
-            earnedPoints: earnedPoints,
-            message: `TACO 모델이 ${detectedCount}개의 쓰레기를 탐지했습니다! 🎉`,
-            newTotalPoints: user.points + earnedPoints,
-            details: {
-              count: detectedCount,
-              types: wasteTypes,
-              confidence: confidence
-            }
-          });
-        } else {
-          // 쓰레기 탐지 안됨
-          setResult({
-            success: false,
-            message: '이미지에서 쓰레기를 탐지할 수 없습니다. 다른 이미지를 시도해보세요.',
-            details: {
-              count: 0,
-              types: [],
-              confidence: []
-            }
-          });
-        }
+        // 분석 성공
+        setResult({
+          success: true,
+          wasteType: apiResult.wasteType || '분석 중...',
+          earnedPoints: apiResult.points || 0,
+          message: `AI가 이미지를 분석했습니다! 🎉`,
+          newTotalPoints: user.points + (apiResult.points || 0),
+          details: {
+            analysis: apiResult.analysis || '분석 결과가 없습니다.',
+            points: apiResult.points || 0
+          }
+        });
       } else {
         // API 오류
         setResult({
           success: false,
-          message: apiResult.message || '모델 실행 중 오류가 발생했습니다.',
+          message: apiResult.message || 'AI 분석 중 오류가 발생했습니다.',
           details: {
-            count: 0,
-            types: [],
-            confidence: []
+            analysis: '',
+            points: 0
           }
         });
       }
@@ -118,9 +96,8 @@ function Camera() {
         success: false,
         message: '서버 연결 오류가 발생했습니다. 다시 시도해주세요.',
         details: {
-          count: 0,
-          types: [],
-          confidence: []
+          analysis: '',
+          points: 0
         }
       });
     } finally {
@@ -204,7 +181,7 @@ function Camera() {
           </button>
         </div>
 
-        {/* TACO 모델 실행 버튼 */}
+        {/* AI 이미지 분석 버튼 */}
         <button
           onClick={handleWasteRecognition}
           disabled={!selectedImage || isProcessing}
@@ -216,7 +193,7 @@ function Camera() {
             backgroundColor: isProcessing ? '#6c757d' : '#28a745'
           }}
         >
-          {isProcessing ? '🔍 TACO 모델 분석 중...' : '🤖 AI 쓰레기 탐지하기'}
+          {isProcessing ? '🔍 AI 분석 중...' : '🤖 AI 이미지 분석하기'}
         </button>
       </div>
 

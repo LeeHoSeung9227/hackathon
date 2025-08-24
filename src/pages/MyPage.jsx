@@ -31,7 +31,7 @@ function MyPage() {
         const userId = localStorage.getItem('userId') || '4';
 
         // 사용자 정보 조회
-        const userResponse = await axios.get(`http://localhost:8082/api/users/${userId}`);
+        const userResponse = await axios.get(`http://43.203.226.243:8080/api/users/${userId}`);
         if (userResponse.data.success) {
           const userData = userResponse.data.data;
           setUser({
@@ -48,13 +48,13 @@ function MyPage() {
         }
 
         // 뱃지 정보 조회
-        const badgeResponse = await axios.get('http://localhost:8082/api/badges');
+        const badgeResponse = await axios.get('http://43.203.226.243:8080/api/badges');
         if (badgeResponse.data.success) {
           const allBadges = badgeResponse.data.data;
           
           // 사용자 획득 뱃지 조회
           try {
-            const userBadgeResponse = await axios.get(`http://localhost:8082/api/badges/user/${userId}`);
+            const userBadgeResponse = await axios.get(`http://43.203.226.243:8080/api/badges/user/${userId}`);
             const userBadges = userBadgeResponse.data.success ? userBadgeResponse.data.data : [];
             
             const badgesWithStatus = allBadges.map(badge => ({
@@ -84,7 +84,7 @@ function MyPage() {
         }
 
         // 포인트 히스토리로 활동 통계 계산
-        const historyResponse = await axios.get(`http://localhost:8082/api/points/user/${userId}/type/all`);
+        const historyResponse = await axios.get(`http://43.203.226.243:8080/api/points/user/${userId}/type/all`);
         if (Array.isArray(historyResponse.data)) {
           const positiveHistory = historyResponse.data.filter(item => item.points > 0);
           const totalRecycling = positiveHistory.length;
