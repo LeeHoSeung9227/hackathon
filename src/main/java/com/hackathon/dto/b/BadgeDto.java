@@ -11,6 +11,10 @@ public class BadgeDto {
     private String imageUrl;
     private Integer pointsRequired;
     private String category;
+    private Integer pointsReward;
+    private String conditionType;
+    private Integer conditionValue;
+    private String conditionDescription;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

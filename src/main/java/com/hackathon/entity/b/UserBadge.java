@@ -19,6 +19,9 @@ public class UserBadge {
     private Long badgeId;
     
     @Column(nullable = false)
+    private boolean earned;
+    
+    @Column(nullable = false)
     private LocalDateTime earnedAt;
     
     @Column(nullable = false)
