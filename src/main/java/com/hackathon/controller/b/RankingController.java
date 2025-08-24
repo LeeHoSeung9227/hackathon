@@ -1,6 +1,6 @@
 package com.hackathon.controller.b;
 
-import com.hackathon.service.a.RankingService;
+import com.hackathon.service.b.RankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @RestController
 @RequestMapping("/api/rankings")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@Slf4j
 public class RankingController {
 
     private final RankingService rankingService;
@@ -35,7 +35,6 @@ public class RankingController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         } catch (Exception e) {
-            log.error("개인 랭킹 조회 오류", e);
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", "개인 랭킹 조회 중 오류가 발생했습니다."));
         }
     }
