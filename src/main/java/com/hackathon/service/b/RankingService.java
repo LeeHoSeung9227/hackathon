@@ -4,8 +4,8 @@ import com.hackathon.entity.a.PointHistory;
 import com.hackathon.entity.a.User;
 import com.hackathon.repository.a.PointHistoryRepository;
 import com.hackathon.repository.a.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,14 +13,19 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class RankingService {
 
+    private static final Logger log = LoggerFactory.getLogger(RankingService.class);
+    
     private final UserRepository userRepository;
     private final PointHistoryRepository pointHistoryRepository;
+    
+    public RankingService(UserRepository userRepository, PointHistoryRepository pointHistoryRepository) {
+        this.userRepository = userRepository;
+        this.pointHistoryRepository = pointHistoryRepository;
+    }
 
     /** 개인 Top 30/100 (TOTAL 고정: 기간 전체 합계) */
     public List<Map<String, Object>> getTopIndividuals(int limit) {
@@ -126,17 +131,26 @@ public class RankingService {
         }
     }
 
-    /** TOTAL 기간 포인트 합계 */
+    /** TOTAL 기간 누적 획득 포인트 합계 */
     private int sumUserPointsTotal(Long userId) {
         try {
-            // TOTAL: 아주 과거 ~ 현재
+            // TOTAL: 아주 과거 ~ 현재 (획득한 포인트만)
             LocalDateTime start = LocalDateTime.of(2000, 1, 1, 0, 0);
             LocalDateTime end = LocalDateTime.now();
             List<PointHistory> histories = pointHistoryRepository
                     .findByUserIdAndCreatedAtBetween(userId, start, end);
-            return histories.stream().mapToInt(PointHistory::getPoints).sum();
+            
+            // 양수 포인트만 합산 (획득한 포인트만)
+            int totalEarnedPoints = histories.stream()
+                    .filter(history -> history.getPoints() > 0)
+                    .mapToInt(PointHistory::getPoints)
+                    .sum();
+            
+            log.info("유저 {} 누적 획득 포인트: {}", userId, totalEarnedPoints);
+            return totalEarnedPoints;
+            
         } catch (Exception e) {
-            log.warn("TOTAL 포인트 계산 실패 userId={}, err={}", userId, e.getMessage());
+            log.warn("누적 획득 포인트 계산 실패 userId={}, err={}", userId, e.getMessage());
             return 0;
         }
     }
