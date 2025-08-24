@@ -22,7 +22,9 @@ jobs:
 
       - name: Build (Gradle)
         run: |
-          chmod +x ./gradlew
+          ls -la gradlew
+          chmod +x gradlew
+          ls -la gradlew
           ./gradlew -x test bootJar
 
       - name: Set up QEMU
