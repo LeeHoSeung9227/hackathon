@@ -26,6 +26,14 @@ public class Badge {
     @Column(nullable = false)
     private String category;
     
+    private Integer pointsReward;
+    
+    private String conditionType;
+    
+    private Integer conditionValue;
+    
+    private String conditionDescription;
+    
     @Column(nullable = false)
     private LocalDateTime createdAt;
     

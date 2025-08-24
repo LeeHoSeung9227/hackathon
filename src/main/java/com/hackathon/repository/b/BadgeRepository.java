@@ -18,4 +18,6 @@ public interface BadgeRepository extends JpaRepository<Badge, Long> {
     @Query("SELECT ub.badgeId as badgeId, '테스트 뱃지' as badgeName, ub.earnedAt as earnedAt " +
            "FROM UserBadge ub WHERE ub.userId = :userId")
     List<Object[]> findUserBadgesByUserId(@Param("userId") Long userId);
+    
+    List<Badge> findByConditionType(String conditionType);
 }
