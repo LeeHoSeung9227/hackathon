@@ -40,6 +40,15 @@ jobs:
           JAR=$(ls build/libs/*.jar | head -n1)
           cp "$JAR" app.jar
 
+      - name: List build files
+        run: |
+          echo "=== Build directory contents ==="
+          ls -la build/
+          echo "=== Build/libs directory contents ==="
+          ls -la build/libs/
+          echo "=== Current directory contents ==="
+          ls -la
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
