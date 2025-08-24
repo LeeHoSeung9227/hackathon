@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/badges")
 @RequiredArgsConstructor
-public class BadgeController {
+public class BadgeAController {
 
     private final BadgeRepository badgeRepository;
     private final UserService userService;
