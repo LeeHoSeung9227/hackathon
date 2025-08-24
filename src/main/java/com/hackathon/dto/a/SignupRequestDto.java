@@ -16,6 +16,8 @@ public class SignupRequestDto {
     private String email;
     private String password;
     private String name;
+    private String nickname;
+    private String school;
     private String college;
     private String campus;
     private String status;

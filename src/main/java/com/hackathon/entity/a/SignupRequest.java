@@ -30,6 +30,9 @@ public class SignupRequest {
     @Column(nullable = false)
     private String name;
     
+    private String nickname;
+    private String school;
+    
     private String college;
     private String campus;
     

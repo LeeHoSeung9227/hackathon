@@ -1,11 +1,12 @@
 -- 사용자 초기 데이터 (User 엔티티 구조에 맞게 수정)
-INSERT INTO users (username, email, password, name, campus, level, points_total, college, created_at, updated_at) VALUES
-('admin', 'admin@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '관리자', 'Seoul', 1, 1000, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('user1', 'user1@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '설호', 'Seoul', 1, 750, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('user2', 'user2@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '김지수', 'Seoul', 1, 500, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('user3', 'user3@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '이가은', 'Seoul', 1, 300, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('user4', 'user4@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '이호승', 'Seoul', 1, 200, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('user5', 'user5@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '안예영', 'Seoul', 1, 100, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO users (username, email, password, name, nickname, school, campus, level, points_total, college, created_at, updated_at) VALUES
+('admin', 'admin@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '관리자', '관리자', 'Seoul National University', 'Seoul', 1, 1000, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('user1', 'user1@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '설호', '설호', 'Seoul National University', 'Seoul', 1, 750, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('user2', 'user2@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '김지수', '김지수', 'Seoul National University', 'Seoul', 1, 500, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('user3', 'user3@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '이가은', '이가은', 'Seoul National University', 'Seoul', 1, 300, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('user4', 'user4@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '이호승', '이호승', 'Seoul National University', 'Seoul', 1, 200, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('user5', 'user5@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '안예영', '안예영', 'Seoul National University', 'Seoul', 1, 100, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('하은', '하은@hanyang.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '하은', '하은', '한양대학교', 'Seoul', 1, 200, '디자인대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- 뱃지 초기 데이터 (Badge 엔티티 구조에 맞게 수정)
 INSERT INTO badges (name, description, image_url, points_required, category, created_at, updated_at) VALUES
@@ -22,3 +23,11 @@ INSERT INTO waste_records (user_id, waste_type, points, image_url, created_at, u
 (3, 'GLASS', 20, '/images/waste/glass1.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (3, 'PET', 10, '/images/waste/pet2.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 (4, 'CAN', 15, '/images/waste/can2.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- 상품 초기 데이터 (Product 엔티티 구조에 맞게 수정)
+INSERT INTO products (name, description, price, points_required, stock_quantity, category, image_url, created_at, updated_at) VALUES
+('에코백', '친환경 재활용 에코백', 15000.00, 100, 50, 'LIFESTYLE', '/images/products/ecobag.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('텀블러', '스테인리스 텀블러', 25000.00, 200, 30, 'LIFESTYLE', '/images/products/tumbler.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('재활용 노트', '재활용 종이로 만든 노트', 8000.00, 50, 100, 'STATIONERY', '/images/products/notebook.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('친환경 펜', '재활용 플라스틱 펜', 5000.00, 30, 200, 'STATIONERY', '/images/products/pen.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('에코 화분', '재활용 소재 화분', 35000.00, 300, 20, 'LIFESTYLE', '/images/products/plantpot.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

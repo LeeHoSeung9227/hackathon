@@ -24,6 +24,10 @@ public class SignupRequestService {
     private final PasswordEncoder passwordEncoder;
     
     public SignupRequestDto createSignupRequest(String username, String email, String password, String name, String college, String campus) {
+        return createSignupRequest(username, email, password, name, null, null, college, campus);
+    }
+    
+    public SignupRequestDto createSignupRequest(String username, String email, String password, String name, String nickname, String school, String college, String campus) {
         // 0. 중복 가입 검증
         if (userRepository.existsByUsername(username)) {
             throw new RuntimeException("이미 존재하는 사용자명입니다: " + username);
@@ -38,6 +42,8 @@ public class SignupRequestService {
         request.setEmail(email);
         request.setPassword(password);
         request.setName(name);
+        request.setNickname(nickname);
+        request.setSchool(school);
         request.setCollege(college);
         request.setCampus(campus);
         request.setStatus("PENDING");
@@ -50,6 +56,8 @@ public class SignupRequestService {
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password)); // 비밀번호 암호화
         user.setName(name);
+        user.setNickname(nickname);
+        user.setSchool(school);
         user.setCollege(college);
         user.setCampus(campus);
         user.setLevel(1);
@@ -107,6 +115,8 @@ public class SignupRequestService {
         dto.setEmail(request.getEmail());
         dto.setPassword(request.getPassword());
         dto.setName(request.getName());
+        dto.setNickname(request.getNickname());
+        dto.setSchool(request.getSchool());
         dto.setCollege(request.getCollege());
         dto.setCampus(request.getCampus());
         dto.setStatus(request.getStatus());

@@ -1,185 +1,335 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import './Main.css';
 
-function Main() {
+const Main = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState({
-    nickname: '설호',
-    campus: 'Seoul',
-    college: 'Computer Science',
-    points: 750,
-    membershipLevel: 'SILVER'
+    nickname: '새싹 하은',
+    points: 9081,
+    level: 1,
+    profileImage: '/images/profile.jpg'
   });
-  const [recentRecords, setRecentRecords] = useState([]);
+  const [recentHistory, setRecentHistory] = useState([
+    { type: '교환', item: '에코백', points: -500, date: '2024.01.15' },
+    { type: '획득', item: '플라스틱 분리수거', points: +100, date: '2024.01.14' },
+    { type: '획득', item: '종이 분리수거', points: +50, date: '2024.01.13' }
+  ]);
   const [news, setNews] = useState([
-    { title: '환경의 날 이벤트 참여', content: '환경의 날을 맞아 특별 포인트 이벤트가 시작되었습니다.', type: 'EVENT' },
-    { title: '새로운 뱃지 획득', content: 'Recycling Master 뱃지를 획득했습니다!', type: 'BADGE' },
-    { title: '랭킹 상승', content: '전체 랭킹이 5위에서 2위로 상승했습니다.', type: 'RANKING' }
+    { type: '뱃지', title: '플라스틱 마스터 뱃지 획득!', date: '2024.01.14' },
+    { type: '레벨업', title: '레벨 2 달성!', date: '2024.01.10' }
   ]);
 
-  // 백엔드 API에서 사용자 데이터 가져오기
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        // 실제 사용자 ID 1번으로 테스트 (admin 계정)
-        const response = await axios.get('http://localhost:8080/api/main/dashboard/1');
-        console.log('백엔드 API 응답:', response.data);
-        
-        if (response.data.user) {
-          setUser(response.data.user);
-        }
-        if (response.data.recentRecords) {
-          setRecentRecords(response.data.recentRecords);
-        }
-      } catch (error) {
-        console.error('백엔드 API 호출 오류:', error);
-        // API 호출 실패 시 기본 데이터 사용
-      }
-    };
+  // 백엔드 연결 테스트용 상태
+  const [debugInfo, setDebugInfo] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
     fetchUserData();
   }, []);
 
-  const getMembershipColor = (level) => {
-    switch (level) {
-      case 'BRONZE': return '#cd7f32';
-      case 'SILVER': return '#c0c0c0';
-      case 'GOLD': return '#ffd700';
-      case 'PLATINUM': return '#e5e4e2';
-      default: return '#cd7f32';
+  const fetchUserData = async () => {
+    try {
+      const userId = localStorage.getItem('userId') || '1';
+      
+      // 사용자 정보 조회
+      const userResponse = await axios.get(`http://localhost:8082/api/users/${userId}`);
+      if (userResponse.data.success) {
+        const userData = userResponse.data.data;
+        setUser({
+          nickname: userData.name || userData.username,
+          points: userData.pointsTotal || 9081,
+          level: userData.level || 1, // 레벨 정보 추가
+          profileImage: userData.profileImage || '/images/profile.jpg'
+        });
+      }
+
+      // 최근 활동 내역 조회
+      const pointsResponse = await axios.get(`http://localhost:8082/api/points/user/${userId}/type/all`);
+      if (Array.isArray(pointsResponse.data)) {
+        const recentPoints = pointsResponse.data.slice(0, 3).map(point => ({
+          type: point.changeType === 'EARNED' ? '획득' : '사용',
+          item: point.description || '포인트 적립',
+          points: point.changeType === 'EARNED' ? `+${point.points}` : `-${point.points}`,
+          date: new Date(point.createdAt).toLocaleDateString('ko-KR')
+        }));
+        setRecentHistory(recentPoints);
+      }
+
+      // 교환 내역 조회
+      try {
+        const exchangeResponse = await axios.get(`http://localhost:8082/api/exchanges/user/${userId}`);
+        if (exchangeResponse.data.success && exchangeResponse.data.data) {
+          const recentExchanges = exchangeResponse.data.data.slice(0, 2).map(exchange => ({
+            type: '교환',
+            item: exchange.productName || '상품',
+            points: `-${exchange.pointsUsed}`,
+            date: new Date(exchange.createdAt).toLocaleDateString('ko-KR')
+          }));
+          setRecentHistory(prev => [...recentExchanges, ...prev.slice(0, 1)]);
+        }
+      } catch (error) {
+        console.log('교환 내역 조회 실패:', error);
+      }
+
+      // 뱃지 정보 조회
+      try {
+        const badgeResponse = await axios.get(`http://localhost:8082/api/badges/user/${userId}`);
+        if (badgeResponse.data.success && badgeResponse.data.data) {
+          const earnedBadges = badgeResponse.data.data.filter(badge => badge.earned);
+          if (earnedBadges.length > 0) {
+            const latestBadge = earnedBadges[0];
+            setNews(prev => [{
+              type: '뱃지',
+              title: `${latestBadge.name} 뱃지 획득!`,
+              date: new Date(latestBadge.earnedAt || latestBadge.createdAt).toLocaleDateString('ko-KR')
+            }, ...prev.slice(0, 1)]);
+          }
+        }
+      } catch (error) {
+        console.log('뱃지 정보 조회 실패:', error);
+      }
+
+    } catch (error) {
+      console.error('사용자 데이터 조회 오류:', error);
     }
   };
 
-  const getWasteTypeIcon = (type) => {
-    switch (type) {
-      case 'PET': return '🥤';
-      case 'CAN': return '🥫';
-      case 'PAPER': return '📄';
-      case 'GLASS': return '🥃';
-      default: return '♻️';
+  // 백엔드 연결 테스트 함수들
+  const testBackendConnection = async () => {
+    setIsLoading(true);
+    setDebugInfo('백엔드 연결 테스트 시작...\n');
+    
+    try {
+      const userId = localStorage.getItem('userId') || '1';
+      
+      // 1. 사용자 정보 테스트
+      setDebugInfo(prev => prev + '1. 사용자 정보 조회 중...\n');
+      const userResponse = await axios.get(`http://localhost:8082/api/users/${userId}`);
+      if (userResponse.data.success) {
+        const userData = userResponse.data.data;
+        setDebugInfo(prev => prev + `✅ 사용자 정보 성공!\n- 닉네임: ${userData.nickname || userData.name}\n- 포인트: ${userData.pointsTotal}\n- 레벨: ${userData.level}\n\n`);
+      } else {
+        setDebugInfo(prev => prev + `❌ 사용자 정보 실패: ${userResponse.data.error}\n\n`);
+      }
+
+      // 2. 포인트 히스토리 테스트
+      setDebugInfo(prev => prev + '2. 포인트 히스토리 조회 중...\n');
+      const pointsResponse = await axios.get(`http://localhost:8082/api/points/user/${userId}/type/all`);
+      if (Array.isArray(pointsResponse.data)) {
+        setDebugInfo(prev => prev + `✅ 포인트 히스토리 성공! (${pointsResponse.data.length}개)\n\n`);
+      } else {
+        setDebugInfo(prev => prev + `❌ 포인트 히스토리 실패\n\n`);
+      }
+
+      // 3. 교환 내역 테스트
+      setDebugInfo(prev => prev + '3. 교환 내역 조회 중...\n');
+      try {
+        const exchangeResponse = await axios.get(`http://localhost:8082/api/exchanges/user/${userId}`);
+        if (exchangeResponse.data.success) {
+          setDebugInfo(prev => prev + `✅ 교환 내역 성공! (${exchangeResponse.data.data?.length || 0}개)\n\n`);
+        } else {
+          setDebugInfo(prev => prev + `❌ 교환 내역 실패: ${exchangeResponse.data.error}\n\n`);
+        }
+      } catch (error) {
+        setDebugInfo(prev => prev + `❌ 교환 내역 오류: ${error.message}\n\n`);
+      }
+
+      // 4. 뱃지 정보 테스트
+      setDebugInfo(prev => prev + '4. 뱃지 정보 조회 중...\n');
+      try {
+        const badgeResponse = await axios.get(`http://localhost:8082/api/badges/user/${userId}`);
+        if (badgeResponse.data.success) {
+          setDebugInfo(prev => prev + `✅ 뱃지 정보 성공! (${badgeResponse.data.data?.length || 0}개)\n\n`);
+        } else {
+          setDebugInfo(prev => prev + `❌ 뱃지 정보 실패: ${badgeResponse.data.error}\n\n`);
+        }
+      } catch (error) {
+        setDebugInfo(prev => prev + `❌ 뱃지 정보 오류: ${error.message}\n\n`);
+      }
+
+      setDebugInfo(prev => prev + '🎉 백엔드 연결 테스트 완료!\n');
+      
+    } catch (error) {
+      setDebugInfo(prev => prev + `❌ 전체 테스트 실패: ${error.message}\n`);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const clearDebugInfo = () => {
+    setDebugInfo('');
+  };
+
+  // 레벨 이름 반환
+  const getLevelName = (level) => {
+    switch (level) {
+      case 1: return '씨앗';
+      case 2: return '작은 새싹';
+      case 3: return '새싹';
+      case 4: return '큰 새싹';
+      case 5: return '나무';
+      default: return '씨앗';
+    }
+  };
+
+  // 다음 레벨까지 필요한 포인트
+  const getNextLevelPoints = (points) => {
+    if (points < 1000) return 1000 - points;
+    if (points < 3000) return 3000 - points;
+    if (points < 6000) return 6000 - points;
+    if (points < 10000) return 10000 - points;
+    return 0;
   };
 
   return (
-    <div>
-      <h1 className="text-center">환영합니다, {user.nickname}님! 👋</h1>
-      
-      {/* 사용자 정보 카드 */}
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h2>{user.nickname}</h2>
-            <p><strong>캠퍼스:</strong> {user.campus}</p>
-            <p><strong>단과대:</strong> {user.college}</p>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              fontSize: '3rem', 
-              color: getMembershipColor(user.membershipLevel),
-              marginBottom: '10px'
-            }}>
-              {user.membershipLevel === 'BRONZE' ? '🥉' : 
-               user.membershipLevel === 'SILVER' ? '🥈' : 
-               user.membershipLevel === 'GOLD' ? '🥇' : '💎'}
-            </div>
-            <h3 style={{ color: getMembershipColor(user.membershipLevel) }}>
-              {user.membershipLevel}
-            </h3>
-          </div>
+    <div className="main-container">
+      {/* 상단 네비게이션 */}
+      <div className="top-nav">
+        <div className="nav-left">
+          <span className="location">📍 한양대학교</span>
         </div>
-        
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <h2>포인트: {user.points.toLocaleString()}점</h2>
-          <div style={{ 
-            width: '100%', 
-            height: '20px', 
-            backgroundColor: '#f0f0f0', 
-            borderRadius: '10px',
-            overflow: 'hidden'
-          }}>
-            <div style={{ 
-              width: `${(user.points % 1000) / 10}%`, 
-              height: '100%', 
-              backgroundColor: getMembershipColor(user.membershipLevel),
-              transition: 'width 0.5s ease'
-            }}></div>
-          </div>
-          <p>다음 등급까지 {1000 - (user.points % 1000)}점 필요</p>
+        <div className="nav-right">
+          <button className="notification-btn">🔔</button>
+          <button className="profile-btn" onClick={() => navigate('/mypage')}>
+            <img src={user.profileImage} alt="프로필" />
+          </button>
         </div>
       </div>
 
-      {/* 최근 활동 */}
-      <div className="card">
-        <h3>최근 활동 기록</h3>
-        <div style={{ display: 'grid', gap: '10px' }}>
-          {recentRecords.length > 0 ? (
-            recentRecords.map((record, index) => (
-              <div key={index} style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                padding: '10px',
-                backgroundColor: '#f8f9fa',
-                borderRadius: '5px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '1.5rem' }}>{getWasteTypeIcon(record.wasteType)}</span>
-                  <span><strong>{record.wasteType}</strong></span>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ color: 'green', fontWeight: 'bold' }}>+{record.earnedPoints}점</span>
-                  <br />
-                  <small style={{ color: '#666' }}>
-                    {new Date(record.recordedAt).toLocaleDateString('ko-KR')}
-                  </small>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p style={{ textAlign: 'center', color: '#666' }}>아직 기록이 없습니다.</p>
+      {/* 메인 대시보드 */}
+      <div className="dashboard">
+        <div className="user-info">
+          <div className="user-avatar">
+            <img src={user.profileImage} alt="프로필" />
+            <div className="level-badge">{user.level}</div>
+          </div>
+          <div className="user-details">
+            <h2 className="user-name">{user.nickname}</h2>
+            <p className="user-level">{getLevelName(user.level)}</p>
+            <div className="points-info">
+              <span className="points">{user.points.toLocaleString()}P</span>
+              <span className="next-level">다음 레벨까지 {getNextLevelPoints(user.points)}P</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 백엔드 연결 테스트 섹션 */}
+        <div className="debug-section" style={{ margin: '20px 0', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #dee2e6' }}>
+          <h3 style={{ margin: '0 0 15px 0', color: '#495057' }}>🔧 백엔드 연결 테스트</h3>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
+            <button 
+              onClick={testBackendConnection} 
+              disabled={isLoading}
+              style={{ 
+                padding: '8px 16px', 
+                backgroundColor: '#007bff', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                cursor: isLoading ? 'not-allowed' : 'pointer',
+                opacity: isLoading ? 0.6 : 1
+              }}
+            >
+              {isLoading ? '테스트 중...' : '백엔드 연결 테스트'}
+            </button>
+            <button 
+              onClick={clearDebugInfo}
+              style={{ 
+                padding: '8px 16px', 
+                backgroundColor: '#6c757d', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: '4px', 
+                cursor: 'pointer' 
+              }}
+            >
+              결과 지우기
+            </button>
+          </div>
+          {debugInfo && (
+            <div style={{ 
+              backgroundColor: 'white', 
+              padding: '10px', 
+              borderRadius: '4px', 
+              border: '1px solid #dee2e6',
+              fontFamily: 'monospace',
+              fontSize: '12px',
+              whiteSpace: 'pre-wrap',
+              maxHeight: '200px',
+              overflowY: 'auto'
+            }}>
+              {debugInfo}
+            </div>
           )}
         </div>
+
+        {/* 빠른 액션 버튼들 */}
+        <div className="quick-actions">
+          <button className="action-btn camera-btn" onClick={() => navigate('/camera')}>
+            <span className="icon">📷</span>
+            <span className="text">촬영하기</span>
+          </button>
+          <button className="action-btn shop-btn" onClick={() => navigate('/shop')}>
+            <span className="icon">🛍️</span>
+            <span className="text">상점가기</span>
+          </button>
+          <button className="action-btn ranking-btn" onClick={() => navigate('/ranking')}>
+            <span className="icon">🏆</span>
+            <span className="text">랭킹보기</span>
+          </button>
+        </div>
       </div>
 
-      {/* 뉴스 및 알림 */}
-      <div className="card">
-        <h3>뉴스 및 알림</h3>
-        <div style={{ display: 'grid', gap: '15px' }}>
-          {news.map((item, index) => (
-            <div key={index} style={{ 
-              padding: '15px',
-              backgroundColor: item.type === 'EVENT' ? '#fff3cd' : 
-                             item.type === 'BADGE' ? '#d1ecf1' : '#d4edda',
-              borderRadius: '5px',
-              border: `1px solid ${
-                item.type === 'EVENT' ? '#ffeaa7' : 
-                item.type === 'BADGE' ? '#bee5eb' : '#c3e6cb'
-              }`
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '1.2rem' }}>
-                  {item.type === 'EVENT' ? '🎉' : 
-                   item.type === 'BADGE' ? '🏆' : '📈'}
-                </span>
-                <h4 style={{ margin: 0 }}>{item.title}</h4>
+      {/* 최근 활동 내역 */}
+      <div className="recent-activity">
+        <div className="section-header">
+          <h3>최근 활동</h3>
+          <button className="view-all-btn" onClick={() => navigate('/history')}>전체보기</button>
+        </div>
+        <div className="activity-list">
+          {recentHistory.map((activity, index) => (
+            <div key={index} className="activity-item">
+              <div className="activity-icon">
+                {activity.type === '획득' ? '➕' : '➖'}
               </div>
-              <p style={{ margin: '5px 0 0 0', color: '#666' }}>{item.content}</p>
+              <div className="activity-details">
+                <span className="activity-type">{activity.type}</span>
+                <span className="activity-item">{activity.item}</span>
+              </div>
+              <div className="activity-points">
+                <span className={`points ${activity.points.startsWith('+') ? 'positive' : 'negative'}`}>
+                  {activity.points}
+                </span>
+                <span className="date">{activity.date}</span>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* 빠른 액션 */}
-      <div className="card">
-        <h3>빠른 액션</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '15px' }}>
-          <button className="btn btn-primary">📱 쓰레기 인식하기</button>
-          <button className="btn btn-success">🏆 랭킹 확인하기</button>
-          <button className="btn btn-primary">📊 기록 보기</button>
-          <button className="btn btn-success">🎖️ 뱃지 확인하기</button>
+      {/* 뉴스 및 알림 */}
+      <div className="news-section">
+        <div className="section-header">
+          <h3>뉴스</h3>
+        </div>
+        <div className="news-list">
+          {news.map((item, index) => (
+            <div key={index} className="news-item">
+              <div className="news-icon">
+                {item.type === '뱃지' ? '🏅' : '⭐'}
+              </div>
+              <div className="news-content">
+                <span className="news-title">{item.title}</span>
+                <span className="news-date">{item.date}</span>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default Main;

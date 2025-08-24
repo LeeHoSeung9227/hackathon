@@ -10,21 +10,35 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class UserService {
+    
+    private static final Logger log = LoggerFactory.getLogger(UserService.class);
     
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+    
     public UserDto createUser(String username, String email, String password, String name, String college, String campus) {
+        return createUser(username, email, password, name, null, null, college, campus);
+    }
+    
+    public UserDto createUser(String username, String email, String password, String name, String nickname, String school, String college, String campus) {
         User user = new User();
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setName(name);
+        user.setNickname(nickname);
+        user.setSchool(school);
         user.setCollege(college);
         user.setCampus(campus);
         
@@ -137,6 +151,35 @@ public class UserService {
     }
 
     /**
+     * 닉네임, 학교명, 단과대로 사용자 검색
+     */
+    public User searchUserByNicknameAndSchoolAndCollege(String nickname, String school, String college) {
+        log.info("사용자 검색: nickname={}, school={}, college={}", nickname, school, college);
+        
+        try {
+            // 간단한 방식으로 사용자 검색
+            List<User> allUsers = userRepository.findAll();
+            User foundUser = allUsers.stream()
+                    .filter(user -> nickname.equals(user.getNickname()) &&
+                                   school.equals(user.getSchool()) &&
+                                   college.equals(user.getCollege()))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (foundUser != null) {
+                log.info("사용자 검색 성공: userId={}", foundUser.getId());
+            } else {
+                log.info("사용자를 찾을 수 없음");
+            }
+            
+            return foundUser;
+        } catch (Exception e) {
+            log.error("사용자 검색 중 오류 발생", e);
+            throw new RuntimeException("사용자 검색 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
      * 포인트에 따른 레벨 계산
      */
     private int calculateLevel(int points) {
@@ -153,6 +196,8 @@ public class UserService {
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setName(user.getName());
+        dto.setNickname(user.getNickname());
+        dto.setSchool(user.getSchool());
         dto.setLevel(user.getLevel());
         dto.setPointsTotal(user.getPointsTotal());
         dto.setCollege(user.getCollege());

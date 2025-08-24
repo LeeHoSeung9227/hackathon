@@ -3,171 +3,296 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function Login() {
-  const [isLogin, setIsLogin] = useState(true);
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
     nickname: '',
-    campus: '',
+    school: '',
     college: ''
   });
   const [message, setMessage] = useState('');
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
+  // 통합 로그인/회원가입 처리
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!formData.nickname.trim() || !formData.school.trim() || !formData.college.trim()) {
+      setMessage('모든 필드를 입력해주세요.');
+      return;
+    }
+
+    setIsLoading(true);
     setMessage('');
 
     try {
-      if (isLogin) {
-        // 로그인 로직 (현재는 시뮬레이션)
-        if (formData.username === 'user1' && formData.password === 'password') {
-          setMessage('설호님 환영합니다!');
-          setTimeout(() => navigate('/main'), 1000);
-        } else if (formData.username === 'user2' && formData.password === 'password') {
-          setMessage('김지수님 환영합니다!');
-          setTimeout(() => navigate('/camera'), 1000);
-        } else if (formData.username === 'user3' && formData.password === 'password') {
-          setMessage('이가은님 환영합니다!');
-          setTimeout(() => navigate('/ranking'), 1000);
-        } else if (formData.username === 'user4' && formData.password === 'password') {
-          setMessage('이호승님 환영합니다!');
-          setTimeout(() => navigate('/mypage'), 1000);
-        } else if (formData.username === 'user5' && formData.password === 'password') {
-          setMessage('안예영님 환영합니다!');
-          setTimeout(() => navigate('/history'), 1000);
-        } else {
-          setMessage('잘못된 사용자명 또는 비밀번호입니다.');
+      // 먼저 기존 사용자 검색
+      const searchResponse = await axios.get(`http://localhost:8082/api/users/search`, {
+        params: {
+          nickname: formData.nickname,
+          school: formData.school,
+          college: formData.college
         }
+      });
+
+      if (searchResponse.data.success && searchResponse.data.data) {
+        // 기존 사용자 발견 - 로그인 처리
+        const userData = searchResponse.data.data;
+        setMessage(`${userData.nickname}님 환영합니다! (기존 계정)`);
+        
+        // 로컬 스토리지에 사용자 정보 저장
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('userId', userData.userId);
+        
+        // 메인 페이지로 이동
+        setTimeout(() => {
+          navigate('/main');
+        }, 1000);
       } else {
-        // 회원가입 로직
-        const response = await axios.post('/api/auth/register', formData);
-        setMessage('회원가입이 완료되었습니다!');
-        setIsLogin(true);
+        // 새로운 사용자 - 자동 회원가입
+        const signupResponse = await axios.post('http://localhost:8082/api/auth/signup/request', {
+          nickname: formData.nickname,
+          school: formData.school,
+          college: formData.college,
+          campus: formData.school, // 학교명을 캠퍼스로도 사용
+          name: formData.nickname // 닉네임을 이름으로도 사용
+        });
+
+        if (signupResponse.data.success) {
+          const newUserData = signupResponse.data.data;
+          setMessage(`${formData.nickname}님, 새로운 계정이 생성되었습니다! 🎉`);
+          
+          // 로컬 스토리지에 사용자 정보 저장
+          localStorage.setItem('user', JSON.stringify(newUserData));
+          localStorage.setItem('userId', newUserData.userId);
+          
+          // 메인 페이지로 이동
+          setTimeout(() => {
+            navigate('/main');
+          }, 1500);
+        } else {
+          setMessage('계정 생성 중 오류가 발생했습니다.');
+        }
       }
     } catch (error) {
-      setMessage('오류가 발생했습니다. 다시 시도해주세요.');
+      console.error('API 호출 오류:', error);
+      
+      if (error.response?.status === 404) {
+        // 사용자를 찾을 수 없는 경우 - 새 계정 생성 시도
+        try {
+          const signupResponse = await axios.post('http://localhost:8082/api/auth/signup/request', {
+            nickname: formData.nickname,
+            school: formData.school,
+            college: formData.college,
+            campus: formData.school,
+            name: formData.nickname
+          });
+
+          if (signupResponse.data.success) {
+            const newUserData = signupResponse.data.data;
+            setMessage(`${formData.nickname}님, 새로운 계정이 생성되었습니다! 🎉`);
+            
+            localStorage.setItem('user', JSON.stringify(newUserData));
+            localStorage.setItem('userId', newUserData.userId);
+            
+            setTimeout(() => {
+              navigate('/main');
+            }, 1500);
+          } else {
+            setMessage('계정 생성 중 오류가 발생했습니다.');
+          }
+        } catch (signupError) {
+          console.error('회원가입 오류:', signupError);
+          setMessage('서버 연결 오류가 발생했습니다.');
+        }
+      } else {
+        setMessage('서버 연결 오류가 발생했습니다.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="text-center">
-      <h1>{isLogin ? '로그인' : '회원가입'}</h1>
-      
-      <div className="card" style={{ maxWidth: '400px', margin: '0 auto' }}>
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <input
-              type="text"
-              name="username"
-              className="form-control"
-              placeholder="사용자명"
-              value={formData.username}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+    <div style={{
+      width: '100vw',
+      height: '100vh',
+      backgroundColor: 'white',
+      padding: '20px',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      {/* 상단 제목 */}
+      <div style={{
+        fontSize: '14px',
+        color: '#666',
+        marginBottom: '40px'
+      }}>
+        로그인
+      </div>
 
-          {!isLogin && (
-            <>
-              <div className="form-group">
-                <input
-                  type="email"
-                  name="email"
-                  className="form-control"
-                  placeholder="이메일"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <input
-                  type="text"
-                  name="nickname"
-                  className="form-control"
-                  placeholder="닉네임"
-                  value={formData.nickname}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <input
-                  type="text"
-                  name="campus"
-                  className="form-control"
-                  placeholder="캠퍼스"
-                  value={formData.campus}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <input
-                  type="text"
-                  name="college"
-                  className="form-control"
-                  placeholder="단과대"
-                  value={formData.college}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-            </>
-          )}
+      {/* 메인 제목 */}
+      <div style={{
+        fontSize: '32px',
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: '20px'
+      }}>
+        로그인
+      </div>
 
-          <div className="form-group">
-            <input
-              type="password"
-              name="password"
-              className="form-control"
-              placeholder="비밀번호"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
+      {/* 환영 메시지 */}
+      <div style={{
+        marginBottom: '40px',
+        lineHeight: '1.6'
+      }}>
+        <div style={{ fontSize: '18px', color: '#333', marginBottom: '8px' }}>
+          안녕하세요.
+        </div>
+        <div style={{ 
+          fontSize: '24px', 
+          fontWeight: 'bold', 
+          color: '#4CAF50',
+          fontFamily: 'cursive, serif',
+          marginBottom: '8px'
+        }}>
+          Pickle 입니다.
+        </div>
+        <div style={{ fontSize: '16px', color: '#666' }}>
+          닉네임, 학교명, 단과대를 입력해주세요.
+        </div>
+        <div style={{ fontSize: '14px', color: '#999', marginTop: '8px' }}>
+          기존 사용자는 로그인, 새로운 사용자는 자동으로 계정이 생성됩니다.
+        </div>
+      </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-            {isLogin ? '로그인' : '회원가입'}
-          </button>
-        </form>
+      {/* 입력 폼 */}
+      <form onSubmit={handleSubmit} style={{ flex: 1 }}>
+        {/* 닉네임 입력 */}
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{
+            display: 'block',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            color: '#333',
+            marginBottom: '8px'
+          }}>
+            닉네임
+          </label>
+          <input
+            type="text"
+            name="nickname"
+            value={formData.nickname}
+            onChange={handleInputChange}
+            placeholder="닉네임을 입력하세요"
+            style={{
+              width: '100%',
+              padding: '16px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              fontSize: '16px',
+              outline: 'none'
+            }}
+          />
+        </div>
 
+        {/* 학교명 입력 */}
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{
+            display: 'block',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            color: '#333',
+            marginBottom: '8px'
+          }}>
+            학교명
+          </label>
+          <input
+            type="text"
+            name="school"
+            value={formData.school}
+            onChange={handleInputChange}
+            placeholder="학교명을 입력하세요 (예: 한양대학교)"
+            style={{
+              width: '100%',
+              padding: '16px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              fontSize: '16px',
+              outline: 'none'
+            }}
+          />
+        </div>
+
+        {/* 단과대 입력 */}
+        <div style={{ marginBottom: '40px' }}>
+          <label style={{
+            display: 'block',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            color: '#333',
+            marginBottom: '8px'
+          }}>
+            단과대
+          </label>
+          <input
+            type="text"
+            name="college"
+            value={formData.college}
+            onChange={handleInputChange}
+            placeholder="단과대를 입력하세요 (예: 디자인대학)"
+            style={{
+              width: '100%',
+              padding: '16px',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              fontSize: '16px',
+              outline: 'none'
+            }}
+          />
+        </div>
+
+        {/* 메시지 표시 */}
         {message && (
-          <div className="mt-3" style={{ color: message.includes('환영') ? 'green' : 'red' }}>
+          <div style={{
+            padding: '12px',
+            backgroundColor: message.includes('환영') || message.includes('생성') ? '#d4edda' : '#f8d7da',
+            color: message.includes('환영') || message.includes('생성') ? '#155724' : '#721c24',
+            borderRadius: '8px',
+            marginBottom: '24px',
+            textAlign: 'center'
+          }}>
             {message}
           </div>
         )}
 
-        <div className="mt-3">
-          <button
-            type="button"
-            className="btn btn-success"
-            onClick={() => setIsLogin(!isLogin)}
-            style={{ width: '100%' }}
-          >
-            {isLogin ? '회원가입으로 전환' : '로그인으로 전환'}
-          </button>
-        </div>
-      </div>
-
-      <div className="card mt-3" style={{ maxWidth: '400px', margin: '0 auto' }}>
-        <h3>데모 계정 정보</h3>
-        <p><strong>user1</strong> (설호) - 비밀번호: password</p>
-        <p><strong>user2</strong> (김지수) - 비밀번호: password</p>
-        <p><strong>user3</strong> (이가은) - 비밀번호: password</p>
-        <p><strong>user4</strong> (이호승) - 비밀번호: password</p>
-        <p><strong>user5</strong> (안예영) - 비밀번호: password</p>
-      </div>
+        {/* 로그인/회원가입 버튼 */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          style={{
+            width: '100%',
+            padding: '18px',
+            backgroundColor: isLoading ? '#6c757d' : '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '18px',
+            fontWeight: 'bold',
+            cursor: isLoading ? 'not-allowed' : 'pointer',
+            marginTop: 'auto'
+          }}
+        >
+          {isLoading ? '처리 중...' : '시작하기'}
+        </button>
+      </form>
     </div>
   );
 }

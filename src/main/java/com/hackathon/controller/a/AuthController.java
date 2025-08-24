@@ -109,34 +109,43 @@ public class AuthController {
     }
 
     /**
-     * 회원가입 신청
+     * 회원가입 신청 (통합 로그인/회원가입용)
      */
     @PostMapping("/signup/request")
     public ResponseEntity<Map<String, Object>> createSignupRequest(@RequestBody Map<String, String> request) {
         try {
-            String username = request.get("username");
-            String password = request.get("password");
-            String email = request.get("email");
-            String name = request.get("name");
+            String nickname = request.get("nickname");
+            String school = request.get("school");
             String college = request.get("college");
             String campus = request.get("campus");
+            String name = request.get("name");
             
-            if (username == null || password == null || email == null || name == null) {
+            if (nickname == null || school == null || college == null) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("error", "사용자명, 비밀번호, 이메일, 이름은 필수입니다."));
+                    .body(Map.of("error", "닉네임, 학교명, 단과대는 필수입니다."));
             }
+            
+            // 자동으로 username과 email 생성
+            String username = nickname + "_" + System.currentTimeMillis();
+            String email = nickname + "@" + school.replaceAll("[^a-zA-Z0-9]", "") + ".edu";
+            String password = "default123"; // 기본 비밀번호
             
             // 회원가입 신청 및 User 엔티티 생성
             SignupRequestDto signupRequest = signupRequestService.createSignupRequest(
-                username, email, password, name, college, campus
+                username, email, password, name != null ? name : nickname, nickname, school, college, campus != null ? campus : school
             );
+            
+            // User 엔티티도 직접 생성 (회원가입 신청과 별도로)
+            var user = userService.createUser(username, email, password, name != null ? name : nickname, nickname, school, college, campus != null ? campus : school);
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "message", "회원가입이 완료되었습니다!",
                 "data", Map.of(
-                    "signupRequest", signupRequest,
-                    "userId", signupRequest.getUserId(),
+                    "userId", user != null ? user.getId() : signupRequest.getUserId(),
+                    "nickname", nickname,
+                    "school", school,
+                    "college", college,
                     "message", "이제 이 userId로 로그인할 수 있습니다."
                 )
             ));

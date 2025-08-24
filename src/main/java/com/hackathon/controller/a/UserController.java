@@ -2,22 +2,26 @@ package com.hackathon.controller.a;
 
 import com.hackathon.dto.a.UserDto;
 import com.hackathon.service.a.UserService;
-import com.hackathon.service.a.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.hackathon.dto.a.RankingDto;
+import com.hackathon.entity.a.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
     
+    private static final Logger log = LoggerFactory.getLogger(UserController.class);
+
     private final UserService userService;
-    private final RankingService rankingService;
     
     /**
      * 모든 사용자 목록 조회
@@ -111,60 +115,58 @@ public class UserController {
         }
     }
     
-    /**
-     * 사용자별 랭킹 조회 (스코프별)
-     */
-    @GetMapping("/{userId}/rankings/scope/{scopeType}")
-    public ResponseEntity<Map<String, Object>> getUserRankingsByScope(
-            @PathVariable Long userId, 
-            @PathVariable String scopeType) {
-        try {
-            List<Map<String, Object>> rankings = rankingService.getUserRankings(userId, scopeType);
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", rankings
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
-    }
+    // 랭킹 관련 메서드들은 임시로 제거됨
     
     /**
-     * 사용자 랭킹 요약
+     * 테스트용 간단한 API
      */
-    @GetMapping("/{userId}/rankings")
-    public ResponseEntity<Map<String, Object>> getUserRankingSummary(@PathVariable Long userId) {
+    @GetMapping("/test")
+    public ResponseEntity<Map<String, Object>> test() {
         try {
-            Map<String, Object> summary = rankingService.getUserRankingSummary(userId);
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", summary
+                "message", "UserController 정상 작동",
+                "timestamp", System.currentTimeMillis()
             ));
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("success", false, "error", e.getMessage()));
         }
     }
-    
+
     /**
-     * 이름으로 사용자 검색
+     * 닉네임, 학교명, 단과대로 사용자 검색
      */
     @GetMapping("/search")
-    public ResponseEntity<Map<String, Object>> searchUsersByName(@RequestParam String name) {
+    public ResponseEntity<Map<String, Object>> searchUser(
+            @RequestParam String nickname,
+            @RequestParam String school,
+            @RequestParam String college) {
+        log.info("=== GET /api/users/search 엔드포인트 호출됨 ===");
+        log.info("검색 조건: nickname={}, school={}, college={}", nickname, school, college);
+        
         try {
-            List<UserDto> users = userService.searchUsersByName(name);
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", Map.of(
-                    "searchTerm", name,
-                    "totalCount", users.size(),
-                    "users", users
-                )
-            ));
+            User user = userService.searchUserByNicknameAndSchoolAndCollege(nickname, school, college);
+            
+            if (user != null) {
+                log.info("사용자 검색 성공: userId={}", user.getId());
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("data", user);
+                return ResponseEntity.ok(response);
+            } else {
+                log.info("사용자를 찾을 수 없음");
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("data", null);
+                return ResponseEntity.ok(response);
+            }
         } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
+            log.error("사용자 검색 중 오류 발생", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "사용자 검색 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 }
