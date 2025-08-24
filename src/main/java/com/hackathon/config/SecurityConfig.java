@@ -53,7 +53,7 @@ public class SecurityConfig {
             "Origin"
         ));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setAllowCredentials(false);  // credentials를 false로 유지
+        configuration.setAllowCredentials(true);  // credentials를 true로 변경
         configuration.setMaxAge(3600L); // 1시간
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
