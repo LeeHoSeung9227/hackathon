@@ -62,6 +62,13 @@ jobs:
 
       - name: Build & Push image
         run: |
+          echo "=== Docker 빌드 시작 ==="
+          echo "현재 디렉토리: $(pwd)"
+          echo "app.jar 파일 확인:"
+          ls -la app.jar
+          echo "Docker 빌드 컨텍스트 확인:"
+          ls -la
+          
           docker build -t "$ECR_REPO:latest" .
           docker tag "$ECR_REPO:latest" "$ECR_REGISTRY/$ECR_REPO:latest"
           docker tag "$ECR_REPO:latest" "$ECR_REGISTRY/$ECR_REPO:${{ github.sha }}"
@@ -86,7 +93,7 @@ jobs:
           
           # ECR 로그인
           echo "--- ECR 로그인 ---"
-          docker login --username AWS --password-stdin ${{ secrets.ECR_REGISTRY }}
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}
 
           # 이미지 pull 및 실행
           echo "--- 이미지 pull 및 실행 ---"
