@@ -811,7 +811,7 @@
         // 개인 랭킹 조회 (Top 30)
         async function checkIndividualRanking() {
             try {
-                const response = await fetch(`${BASE_URL}/api/rankings/individuals?limit=30`);
+                const response = await fetch(`${BASE_URL}/api/rankings/individual/top?limit=30`);
                 const data = await response.json();
                 
                 if (response.ok && data.data) {
@@ -914,7 +914,7 @@
         async function checkUserRanking() {
             try {
                 // 개인 랭킹에서 내 순위 찾기
-                const response = await fetch(`${BASE_URL}/api/rankings/individuals?limit=100`);
+                const response = await fetch(`${BASE_URL}/api/rankings/individual/top?limit=100`);
                 const data = await response.json();
                 
                 if (response.ok && data.data) {
