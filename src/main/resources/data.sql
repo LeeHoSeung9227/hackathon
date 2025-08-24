@@ -6,7 +6,18 @@ INSERT INTO users (username, email, password, name, nickname, school, campus, le
 ('user3', 'user3@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '이가은', '이가은', 'Seoul National University', 'Seoul', 1, 300, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('user4', 'user4@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '이호승', '이호승', 'Seoul National University', 'Seoul', 1, 200, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('user5', 'user5@hackathon.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '안예영', '안예영', 'Seoul National University', 'Seoul', 1, 100, 'Seoul National University', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('하은', '하은@hanyang.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '하은', '하은', '한양대학교', 'Seoul', 1, 200, '디자인대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+('하은', '하은@hanyang.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '하은', '하은', '한양대학교', 'Seoul', 1, 200, '디자인대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('민수', '민수@hanyang.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '민수', '민수', '한양대학교', 'Seoul', 1, 350, '공과대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('지영', '지영@kaist.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '지영', '지영', 'KAIST', 'Daejeon', 1, 450, '전산학부', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('준호', '준호@kaist.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '준호', '준호', 'KAIST', 'Daejeon', 1, 280, '생명화학공학과', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('소연', '소연@yonsei.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '소연', '소연', '연세대학교', 'Seoul', 1, 180, '의과대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('현우', '현우@yonsei.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '현우', '현우', '연세대학교', 'Seoul', 1, 320, '경영대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('수진', '수진@korea.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '수진', '수진', '고려대학교', 'Seoul', 1, 150, '문과대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('동현', '동현@korea.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '동현', '동현', '고려대학교', 'Seoul', 1, 420, '사과대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('예은', '예은@skku.edu', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '예은', '예은', '성균관대학교', 'Seoul', 1, 290, '자연과학대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('태민', '태민@skku.edu', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '태민', '태민', '성균관대학교', 'Seoul', 1, 380, '공학대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('혜진', '혜진@hanyang.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '혜진', '혜진', '한양대학교', 'Seoul', 1, 220, '의과대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('성훈', '성훈@hanyang.ac.kr', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVEFDa', '성훈', '성훈', '한양대학교', 'Seoul', 1, 175, '경영대학', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- 뱃지 초기 데이터 (Badge 엔티티 구조에 맞게 수정)
 INSERT INTO badges (name, description, image_url, points_required, category, created_at, updated_at) VALUES

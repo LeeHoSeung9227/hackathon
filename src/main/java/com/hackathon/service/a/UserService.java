@@ -178,6 +178,35 @@ public class UserService {
             throw new RuntimeException("사용자 검색 중 오류가 발생했습니다.", e);
         }
     }
+    
+    /**
+     * 이름 + 학교 + 단과대명으로 사용자 찾기
+     */
+    public Optional<UserDto> findUserByNameAndSchoolAndCollege(String name, String school, String college) {
+        log.info("사용자 검색: name={}, school={}, college={}", name, school, college);
+        
+        try {
+            // 간단한 방식으로 사용자 검색
+            List<User> allUsers = userRepository.findAll();
+            User foundUser = allUsers.stream()
+                    .filter(user -> name.equals(user.getName()) &&
+                                   school.equals(user.getSchool()) &&
+                                   college.equals(user.getCollege()))
+                    .findFirst()
+                    .orElse(null);
+            
+            if (foundUser != null) {
+                log.info("사용자 검색 성공: userId={}", foundUser.getId());
+                return Optional.of(convertToDto(foundUser));
+            } else {
+                log.info("사용자를 찾을 수 없음");
+                return Optional.empty();
+            }
+        } catch (Exception e) {
+            log.error("사용자 검색 중 오류 발생", e);
+            return Optional.empty();
+        }
+    }
 
     /**
      * 포인트에 따른 레벨 계산

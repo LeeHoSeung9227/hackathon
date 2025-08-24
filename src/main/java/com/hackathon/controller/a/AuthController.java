@@ -32,19 +32,20 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> request) {
         try {
-            String username = request.get("username");
-            String password = request.get("password");
+            String name = request.get("name");
+            String school = request.get("school");
+            String college = request.get("college");
             
-            if (username == null || password == null) {
+            if (name == null || school == null || college == null) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("error", "사용자명과 비밀번호는 필수입니다."));
+                    .body(Map.of("error", "이름, 학교명, 단과대명은 필수입니다."));
             }
             
-            // 실제 사용자 인증
-            var user = userService.authenticateUser(username, password);
+            // 이름 + 학교 + 단과대명으로 사용자 인증
+            var user = userService.findUserByNameAndSchoolAndCollege(name, school, college);
             if (user.isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body(Map.of("error", "잘못된 사용자명 또는 비밀번호입니다."));
+                    .body(Map.of("error", "해당 정보로 사용자를 찾을 수 없습니다."));
             }
             
             // 로그인 세션 생성
