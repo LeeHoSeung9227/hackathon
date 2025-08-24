@@ -25,7 +25,10 @@ jobs:
           ls -la gradlew
           chmod +x gradlew
           ls -la gradlew
-          ./gradlew -x test bootJar
+          echo "=== Gradle 버전 확인 ==="
+          ./gradlew --version
+          echo "=== Gradle 빌드 시작 ==="
+          ./gradlew clean bootJar -x test
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
