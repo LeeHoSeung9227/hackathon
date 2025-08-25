@@ -2,41 +2,46 @@ package com.hackathon.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
+import org.springframework.core.Ordered;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.filter.CorsFilter;
 
-// CORS 설정이 SecurityConfig에서 중앙 관리되므로 이 클래스는 비활성화
-// @Configuration
-public class CorsConfig implements WebMvcConfigurer {
-
-    // @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        // SecurityConfig에서 CORS 설정을 관리하므로 여기서는 설정하지 않음
-        // registry.addMapping("/**")
-        //         .allowedOrigins("http://localhost:3000", "http://localhost:3001")
-        //         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        //         .allowedHeaders("*")
-        //         .allowCredentials(true)
-        //         .maxAge(3600);
-    }
-
-    // @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        // SecurityConfig에서 CORS 설정을 관리하므로 여기서는 설정하지 않음
-        // CorsConfiguration configuration = new CorsConfiguration();
-        // configuration.addAllowedOrigin("http://localhost:3000");
-        // configuration.addAllowedOrigin("http://localhost:3001");
-        // configuration.addAllowedMethod("*");
-        // configuration.addAllowedHeader("*");
-        // configuration.setAllowCredentials(true);
+@Configuration
+@Order(Ordered.HIGHEST_PRECEDENCE)  // CORS 필터가 최우선 순위로 실행
+public class CorsConfig {
+    
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
         
-        // UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        // source.registerCorsConfiguration("/**", configuration);
-        // return source;
-        return null;
+        // 자격증명 허용
+        config.setAllowCredentials(true);
+        
+        // 허용할 origin 패턴들
+        config.addAllowedOriginPattern("http://localhost:5173");
+        config.addAllowedOriginPattern("http://localhost:3000");
+        config.addAllowedOriginPattern("http://localhost:3001");
+        config.addAllowedOriginPattern("https://team5-fe-seven.vercel.app");
+        config.addAllowedOriginPattern("https://*.o-r.kr");
+        
+        // 허용할 헤더들
+        config.addAllowedHeader("*");
+        
+        // 허용할 메서드들
+        config.addAllowedMethod("*");
+        
+        // 노출할 헤더들
+        config.addExposedHeader("Authorization");
+        
+        // preflight 요청 캐시 시간
+        config.setMaxAge(3600L);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        
+        return new CorsFilter(source);
     }
 }
 
