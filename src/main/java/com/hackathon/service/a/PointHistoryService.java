@@ -6,6 +6,7 @@ import com.hackathon.repository.a.PointHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +35,50 @@ public class PointHistoryService {
         history.setPoints(points);
         history.setDescription(description);
         history.setImageId(imageId);  // 이미지 ID 설정
+        
+        PointHistory savedHistory = pointHistoryRepository.save(history);
+        return convertToDto(savedHistory);
+    }
+    
+    public PointHistoryDto createPointHistory(Long userId, String type, Integer points, String description, String wasteType) {
+        PointHistory history = new PointHistory();
+        history.setUserId(userId);
+        history.setType(type);
+        history.setPoints(points);
+        history.setDescription(description);
+        history.setWasteType(wasteType);  // wasteType 설정
+        
+        PointHistory savedHistory = pointHistoryRepository.save(history);
+        return convertToDto(savedHistory);
+    }
+    
+    public PointHistoryDto createPointHistory(Long userId, String type, Integer points, String description, Long imageId, String wasteType) {
+        PointHistory history = new PointHistory();
+        history.setUserId(userId);
+        history.setType(type);
+        history.setPoints(points);
+        history.setDescription(description);
+        history.setImageId(imageId);  // 이미지 ID 설정
+        history.setWasteType(wasteType);  // wasteType 설정
+        
+        PointHistory savedHistory = pointHistoryRepository.save(history);
+        return convertToDto(savedHistory);
+    }
+    
+    public PointHistoryDto createPointHistory(Long userId, String type, Integer points, String description, Long imageId, String wasteType, LocalDateTime createdAt) {
+        PointHistory history = new PointHistory();
+        history.setUserId(userId);
+        history.setType(type);
+        history.setPoints(points);
+        history.setDescription(description);
+        history.setImageId(imageId);  // 이미지 ID 설정
+        history.setWasteType(wasteType);  // wasteType 설정
+        
+        // createdAt 설정 (없으면 현재 시간)
+        if (createdAt != null) {
+            history.setCreatedAt(createdAt);
+            history.setUpdatedAt(createdAt);
+        }
         
         PointHistory savedHistory = pointHistoryRepository.save(history);
         return convertToDto(savedHistory);
@@ -84,6 +129,7 @@ public class PointHistoryService {
         dto.setPoints(history.getPoints());
         dto.setDescription(history.getDescription());
         dto.setImageId(history.getImageId());  // 이미지 ID 추가
+        dto.setWasteType(history.getWasteType()); // wasteType 추가
         dto.setCreatedAt(history.getCreatedAt());
         dto.setUpdatedAt(history.getUpdatedAt());
         return dto;

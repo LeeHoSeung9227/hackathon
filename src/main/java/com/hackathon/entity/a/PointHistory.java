@@ -25,6 +25,8 @@ public class PointHistory {
     
     private Long imageId;  // 이미지 ID 추가
     
+    private String wasteType;  // AI 분석 결과 wasteType 추가
+    
     @Column(nullable = false)
     private LocalDateTime createdAt;
     

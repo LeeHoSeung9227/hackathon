@@ -146,6 +146,7 @@ public class AiController {
                             result.getReason())
                     );
                     pointHistory.setImageId(savedImage.getId()); // 저장된 이미지 ID 연결
+                    pointHistory.setWasteType(result.getWasteType()); // wasteType 저장 추가!
                     pointHistory.setCreatedAt(LocalDateTime.now());
                     pointHistory.setUpdatedAt(LocalDateTime.now());
                     

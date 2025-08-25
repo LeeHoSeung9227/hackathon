@@ -38,37 +38,92 @@ public class PointController {
     
     // ===== Point Add/Subtract =====
     
-    /**
-     * Add/Subtract Points
-     */
-    @PostMapping("/add")
-    public ResponseEntity<Map<String, Object>> addPoints(@RequestBody Map<String, Object> request) {
-        try {
-            Long userId = Long.valueOf(request.get("userId").toString());
-            Integer points = Integer.valueOf(request.get("points").toString());
-            String type = (String) request.get("type");
-            String description = (String) request.get("description");
-            
-            // Create point history
-            PointHistoryDto pointHistory = pointHistoryService.createPointHistory(userId, type, points, description);
-            
-            // Update user points
-            userService.updateUserPoints(userId, points);
-            
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", points > 0 ? "Points added successfully" : "Points subtracted successfully",
-                "data", Map.of(
-                    "pointHistory", pointHistory,
-                    "pointsChanged", points,
-                    "newTotalPoints", userService.getUserById(userId).getPointsTotal()
-                )
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
-        }
-    }
+         /**
+      * Add/Subtract Points
+      */
+     @PostMapping("/add")
+     public ResponseEntity<Map<String, Object>> addPoints(@RequestBody Map<String, Object> request) {
+         try {
+             Long userId = Long.valueOf(request.get("userId").toString());
+             Integer points = Integer.valueOf(request.get("points").toString());
+             String type = (String) request.get("type");
+             String description = (String) request.get("description");
+             
+             // imageId 파싱 (선택)
+             Long imageId = request.get("imageId") != null ? Long.valueOf(request.get("imageId").toString()) : null;
+             
+             // createdAt 파싱 (선택) - ISO8601 형식 지원
+             LocalDateTime createdAt = null;
+             if (request.get("createdAt") != null) {
+                 String ts = request.get("createdAt").toString();
+                 try {
+                     createdAt = java.time.OffsetDateTime.parse(ts).toLocalDateTime();
+                 } catch (Exception e) {
+                     try {
+                         createdAt = java.time.LocalDateTime.parse(ts);
+                     } catch (Exception e2) {
+                         log.warn("createdAt 파싱 실패: {}, 기본값 사용", ts);
+                     }
+                 }
+             }
+             
+             // wasteType 결정 로직
+             String wasteType = null;
+             if ("AI_ANALYSIS".equals(type)) {
+                 // 1. 요청에 wasteType이 오면 그대로 사용
+                 if (request.get("wasteType") != null) {
+                     wasteType = request.get("wasteType").toString();
+                     log.info("요청에서 wasteType 사용: {}", wasteType);
+                 } 
+                 // 2. 없고 imageId가 있으면 AI 결과에서 조회
+                 else if (imageId != null) {
+                     try {
+                         var aiResult = aiResultRepository.findTopByImageIdOrderByCreatedAtDesc(imageId);
+                         if (aiResult.isPresent()) {
+                             wasteType = aiResult.get().getWasteType();
+                             log.info("AI 결과에서 wasteType 조회: imageId={}, wasteType={}", imageId, wasteType);
+                         } else {
+                             log.warn("AI 결과가 없음: imageId={}", imageId);
+                         }
+                     } catch (Exception e) {
+                         log.error("AI 결과 조회 실패: imageId={}, error={}", imageId, e.getMessage());
+                     }
+                 }
+                 // 3. 그래도 없으면 null
+                 if (wasteType == null) {
+                     log.info("wasteType을 찾을 수 없음: type={}, imageId={}", type, imageId);
+                 }
+             }
+             
+             // Create point history with all parameters
+             PointHistoryDto pointHistory = pointHistoryService.createPointHistory(
+                 userId, type, points, description, imageId, wasteType, createdAt
+             );
+             
+             // Update user points
+             userService.updateUserPoints(userId, points);
+             
+             Map<String, Object> responseData = new HashMap<>();
+             responseData.put("pointHistory", pointHistory);
+             responseData.put("pointsChanged", points);
+             responseData.put("newTotalPoints", userService.getUserById(userId).getPointsTotal());
+             
+             // wasteType이 있으면 응답에 포함
+             if (wasteType != null) {
+                 responseData.put("wasteType", wasteType);
+             }
+             
+             return ResponseEntity.ok(Map.of(
+                 "success", true,
+                 "message", points > 0 ? "포인트가 성공적으로 추가되었습니다" : "포인트가 성공적으로 차감되었습니다",
+                 "data", responseData
+             ));
+         } catch (Exception e) {
+             log.error("포인트 추가/차감 실패: {}", e.getMessage(), e);
+             return ResponseEntity.badRequest()
+                 .body(Map.of("success", false, "error", e.getMessage()));
+         }
+     }
     
     /**
      * Get user point summary (total earned, current points, spent points, college total points)
@@ -209,42 +264,37 @@ public class PointController {
                     historyMap.put("createdAt", history.getCreatedAt());
                     historyMap.put("updatedAt", history.getUpdatedAt());
                     
-                                         // AI 분석 결과 정보 추가 (AI_ANALYSIS 타입인 경우)
-                     if ("AI_ANALYSIS".equals(history.getType()) && history.getImageId() != null) {
-                         try {
-                             log.info("=== AI 분석 결과 조회 시작 ===");
-                             log.info("imageId: {}, type: {}", history.getImageId(), history.getType());
-                             
-                             // AI 결과에서 재질 정보 가져오기
-                             List<AiResult> aiResults = aiResultRepository.findByImageIdOrderByCreatedAtDesc(history.getImageId());
-                             log.info("AI 결과 조회 완료: 결과 개수={}", aiResults.size());
-                             
-                             if (!aiResults.isEmpty()) {
-                                 AiResult aiResult = aiResults.get(0); // 가장 최근 결과
-                                 String wasteType = aiResult.getWasteType();
-                                 log.info("AI 결과에서 wasteType 추출: {}", wasteType);
-                                 
-                                 if (wasteType != null && !wasteType.trim().isEmpty()) {
-                                     historyMap.put("wasteType", wasteType);  // ✅ AI 분석 결과 추가
-                                     log.info("✅ historyMap에 wasteType 추가 완료: {}", wasteType);
-                                 } else {
-                                     log.warn("⚠️ wasteType이 null이거나 빈 문자열: {}", wasteType);
-                                     historyMap.put("wasteType", "UNKNOWN");  // 기본값 설정
+                                         // AI 분석 타입인 경우 wasteType 추가
+                     if ("AI_ANALYSIS".equals(history.getType())) {
+                         // PointHistory에서 직접 wasteType 가져오기
+                         String wasteType = history.getWasteType();
+                         
+                         // 저장된 wasteType이 없으면 fallback으로 description에서 추출
+                         if (wasteType == null || wasteType.trim().isEmpty()) {
+                             log.info("저장된 wasteType이 없음, description에서 추출 시도");
+                             if (history.getDescription() != null) {
+                                 String desc = history.getDescription().toUpperCase();
+                                 if (desc.contains("PLASTIC")) {
+                                     wasteType = "PLASTIC";
+                                 } else if (desc.contains("PET")) {
+                                     wasteType = "PET";
+                                 } else if (desc.contains("PAPER")) {
+                                     wasteType = "PAPER";
+                                 } else if (desc.contains("GLASS")) {
+                                     wasteType = "GLASS";
+                                 } else if (desc.contains("METAL")) {
+                                     wasteType = "METAL";
                                  }
-                             } else {
-                                 log.warn("⚠️ AI 결과가 없음: imageId={}", history.getImageId());
-                                 // AI 결과가 없어도 기본값 설정
-                                 historyMap.put("wasteType", "NO_DATA");
                              }
-                             
-                             log.info("=== AI 분석 결과 조회 완료 ===");
-                         } catch (Exception e) {
-                             log.error("❌ AI 결과 조회 실패: imageId={}, error={}", history.getImageId(), e.getMessage(), e);
-                             // 에러가 발생해도 기본값 설정
-                             historyMap.put("wasteType", "ERROR");
                          }
-                     } else {
-                         log.info("AI 분석 결과 추가 조건 불만족: type={}, imageId={}", history.getType(), history.getImageId());
+                         
+                         // wasteType이 여전히 없으면 기본값 설정
+                         if (wasteType == null || wasteType.trim().isEmpty()) {
+                             wasteType = "UNKNOWN";
+                         }
+                         
+                         historyMap.put("wasteType", wasteType);
+                         log.info("AI 분석 wasteType 설정: 저장된값={}, 최종값={}", history.getWasteType(), wasteType);
                      }
                     
                     // 이미지 정보가 있는 경우 추가
