@@ -1,10 +1,11 @@
-# 🚀 Hackathon Project - AI 기반 폐기물 분리수거 시스템
+# 🚀 Hackathon Project - AI 기반 폐기물 분리수거 시스템 백엔드파트
 
 ## 📋 프로젝트 개요
-AI 모델(TACO)을 활용한 폐기물 분리수거 시스템으로, 사용자의 폐기물 사진을 분석하여 적절한 분류를 제안하고 포인트를 제공하는 플랫폼입니다.
+- **서비스 이름**: Pickle(피클)
+- **슬로건**: 떼고 비우고 찍고 - 습관이 되는 분리배출
+- **서비스 요약**: 페트병 라벨 제거와 일회용 컵 잔여물 비우기 인증을 통해 분리배출을 습관화시키는 AI 리워드 챌린지 서비스
 
 ## 🏗️ 기술 스택
-
 ### Backend
 - **Framework**: Spring Boot 3.2.0
 - **Language**: Java 17
@@ -14,18 +15,12 @@ AI 모델(TACO)을 활용한 폐기물 분리수거 시스템으로, 사용자�
 - **Security**: Spring Security 6.2.0 + JWT
 - **AI Integration**: Python TACO Model
 
-### Frontend
-- **Framework**: React 18.2.0
-- **Router**: React Router 6.3.0
-- **HTTP Client**: Axios
-- **Build Tool**: Vite
-
 ### DevOps
 - **Container**: Docker
 - **Cloud**: AWS ECR/EC2
 - **CI/CD**: GitHub Actions
 
-## 🗂️ 프로젝트 구조
+## 🗂️ 프로젝트 구조(A : 이호승 B : 안예영)
 
 ```
 src/main/java/com/hackathon/
@@ -194,8 +189,6 @@ src/main/java/com/hackathon/
 | 테이블명 | 설명 | 주요 필드 | 상태 |
 |---------|------|-----------|------|
 | `products` | 상품 정보 | id, name, description, price, pointsRequired, stockQuantity | ✅ 구현됨 |
-| `orders` | 주문 정보 | id, userId, status, totalAmount, totalPoints | ✅ 구현됨 (원래 스키마에 없었음) |
-| `order_items` | 주문 상품 항목 | id, orderId, productId, productName, quantity, unitPrice | ✅ 구현됨 (원래 스키마에 없었음) |
 | `activity_history` | 활동 기록 | id, userId, activityType, pointsEarned, description | ✅ 구현됨 |
 | `daily_activity` | 일간 활동 통계 | id, userId, activityDate, totalPoints, activitiesCount | ✅ 구현됨 |
 | `weekly_activity` | 주간 활동 통계 | id, userId, weekStartDate, weekEndDate, totalPoints, activitiesCount | ✅ 구현됨 |
@@ -254,13 +247,6 @@ src/main/java/com/hackathon/
 ./gradlew bootRun
 ```
 
-### 2. 프론트엔드 실행
-```bash
-# frontend 디렉토리에서
-npm install
-npm run dev
-```
-
 ### 3. Docker 실행
 ```bash
 docker-compose up -d
@@ -288,33 +274,9 @@ TACO_MODEL_PATH=/path/to/taco_model.py
 - **React**: ESLint + Prettier 설정 사용
 - **주석**: 한국어로 작성 (비즈니스 로직 설명)
 
-### 커밋 메시지 규칙
-```
-feat: 새로운 기능 추가
-fix: 버그 수정
-docs: 문서 수정
-style: 코드 포맷팅
-refactor: 코드 리팩토링
-test: 테스트 코드 추가
-chore: 빌드 업무 수정
-```
-
-### 브랜치 전략
-- `main`: 프로덕션 배포용
-- `develop`: 개발 통합용
-- `feature/기능명`: 기능 개발용
-- `hotfix/버그명`: 긴급 수정용
-
-## 🧪 테스트
-
 ### 백엔드 테스트
 ```bash
 ./gradlew test
-```
-
-### 프론트엔드 테스트
-```bash
-npm test
 ```
 
 ### 통합 테스트
@@ -332,9 +294,7 @@ npm test
 
 ### 헬스 체크
 - `/actuator/health`: 애플리케이션 상태 확인
-- `/api/taco/health`: TACO 모델 상태 확인
 
-## 🔒 보안
 
 ### 인증 방식
 - JWT 토큰 기반 인증
@@ -348,28 +308,15 @@ npm test
 ## 🚀 배포
 
 ### AWS 배포
-1. ECR에 Docker 이미지 푸시
+1. DOCKERHUB 활용
 2. EC2 인스턴스에 배포
 3. GitHub Actions로 자동 배포
 
-### 환경별 설정
-- `dev`: 개발 환경
-- `staging`: 스테이징 환경
-- `prod`: 프로덕션 환경
-
-## 📞 연락처 및 지원
 
 ### 개발팀
-- **A개발자**: 사용자 관리, 인증, 포인트 시스템, AI 분석, 사용자 선호도
-- **B개발자**: 상품 관리, 주문, 활동 기록, 뱃지, 교환 내역
+- **이호승**: 사용자 관리, 인증, 포인트 시스템, AI 분석, 사용자 선호도
+- **안예영**: 상품 관리, 주문, 활동 기록, 뱃지, 교환 내역
 
-### 이슈 리포트
-- GitHub Issues 사용
-- 버그 리포트 시 상세한 재현 단계 포함
 
----
+**마지막 업데이트**: 2025년 8월25일
 
-**마지막 업데이트**: 2024년 12월
-**버전**: 1.1.0 (원래 DB 스키마 기준으로 수정 완료)
-
-<!-- 워크플로우 테스트를 위한 커밋 -->
