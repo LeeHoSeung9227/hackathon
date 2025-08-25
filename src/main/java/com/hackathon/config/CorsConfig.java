@@ -19,12 +19,12 @@ public class CorsConfig {
         // 자격증명 허용
         config.setAllowCredentials(true);
         
-        // 허용할 origin 패턴들
-        config.addAllowedOriginPattern("http://localhost:5173");
-        config.addAllowedOriginPattern("http://localhost:3000");
-        config.addAllowedOriginPattern("http://localhost:3001");
-        config.addAllowedOriginPattern("https://team5-fe-seven.vercel.app");
-        config.addAllowedOriginPattern("https://*.o-r.kr");
+        // 허용할 origin 패턴들 (와일드카드 제거, 구체적인 도메인만)
+        config.addAllowedOrigin("http://localhost:5173");
+        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("http://localhost:3001");
+        config.addAllowedOrigin("https://team5-fe-seven.vercel.app");
+        // config.addAllowedOriginPattern("https://*.o-r.kr"); // 와일드카드 제거
         
         // 허용할 헤더들
         config.addAllowedHeader("*");
