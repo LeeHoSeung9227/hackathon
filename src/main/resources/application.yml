@@ -1,5 +1,14 @@
 server:
   port: 8082
+  # Nginx가 SSL을 처리하므로 Spring Boot SSL 비활성화
+  # ssl:
+  #   enabled: true
+  #   key-store: classpath:keystore.p12
+  #   key-store-password: password123
+  #   key-store-type: PKCS12
+  #   key-alias: tomcat
+  # http2:
+  #   enabled: true
 
 spring:
   main:
@@ -23,9 +32,6 @@ spring:
     console:
       enabled: true
       path: /h2-console
-      settings:
-        web-allow-others: true
-        web-port: 8080
   
   jpa:
     hibernate:
@@ -69,6 +75,8 @@ logging:
   level:
     com.hackathon: DEBUG
     org.springframework.security: DEBUG
+    org.springframework.web.cors: DEBUG  # CORS 로그 활성화
+    org.springframework.web.filter: DEBUG  # 필터 로그 활성화
 
 management:
   endpoints:
