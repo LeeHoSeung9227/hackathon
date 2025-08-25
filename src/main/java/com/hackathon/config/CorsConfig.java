@@ -1,22 +1,24 @@
-package com.hackathon.config;
+package cosacosa.medimate.config;
 
-// import org.springframework.context.annotation.Bean;
-// import org.springframework.context.annotation.Configuration;
-// import org.springframework.core.annotation.Order;
-// import org.springframework.core.Ordered;
-// import org.springframework.web.cors.CorsConfiguration;
-// import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-// import org.springframework.web.filter.CorsFilter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-// Spring Security CORS와의 충돌을 방지하기 위해 비활성화
-// @Configuration
-// @Order(Ordered.HIGHEST_PRECEDENCE)
-// public class CorsConfig {
-    
-//     @Bean
-//     public CorsFilter corsFilter() {
-//         // Spring Security에서 CORS를 관리하므로 여기서는 설정하지 않음
-//         return null;
-//     }
-// }
-
+@Configuration
+public class CorsConfig {
+    @Bean
+    public WebMvcConfigurer corsConfig() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOriginPatterns("*")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+                        .allowedHeaders("*")
+                        .allowCredentials(true)
+                        .maxAge(3600);
+            }
+        };
+    }
+}
