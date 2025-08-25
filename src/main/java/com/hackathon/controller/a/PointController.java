@@ -245,13 +245,12 @@ public class PointController {
                     result.add(historyMap);
                 }
                 
-                // 총 누적 포인트 계산
-                int totalPoints = histories.stream()
-                    .mapToInt(history -> history.getPoints())
-                    .sum();
+                // 사용자 현재 총 포인트 가져오기
+                var user = userService.getUserById(userId);
+                int currentPoints = user.getPointsTotal();
                 
                 Map<String, Object> response = new HashMap<>();
-                response.put("totalPoint", totalPoints);      // 총 누적 포인트
+                response.put("totalPoint", currentPoints);      // 사용자 현재 총 포인트
                 response.put("history", result);
                 
                 return ResponseEntity.ok(response);
