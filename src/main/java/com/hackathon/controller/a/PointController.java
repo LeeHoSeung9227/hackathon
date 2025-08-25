@@ -212,7 +212,8 @@ public class PointController {
                                          // AI 분석 결과 정보 추가 (AI_ANALYSIS 타입인 경우)
                      if ("AI_ANALYSIS".equals(history.getType()) && history.getImageId() != null) {
                          try {
-                             log.info("AI 분석 결과 조회 시작: imageId={}", history.getImageId());
+                             log.info("=== AI 분석 결과 조회 시작 ===");
+                             log.info("imageId: {}, type: {}", history.getImageId(), history.getType());
                              
                              // AI 결과에서 재질 정보 가져오기
                              List<AiResult> aiResults = aiResultRepository.findByImageIdOrderByCreatedAtDesc(history.getImageId());
@@ -223,13 +224,24 @@ public class PointController {
                                  String wasteType = aiResult.getWasteType();
                                  log.info("AI 결과에서 wasteType 추출: {}", wasteType);
                                  
-                                 historyMap.put("wasteType", wasteType);  // ✅ AI 분석 결과 추가
-                                 log.info("historyMap에 wasteType 추가 완료: {}", wasteType);
+                                 if (wasteType != null && !wasteType.trim().isEmpty()) {
+                                     historyMap.put("wasteType", wasteType);  // ✅ AI 분석 결과 추가
+                                     log.info("✅ historyMap에 wasteType 추가 완료: {}", wasteType);
+                                 } else {
+                                     log.warn("⚠️ wasteType이 null이거나 빈 문자열: {}", wasteType);
+                                     historyMap.put("wasteType", "UNKNOWN");  // 기본값 설정
+                                 }
                              } else {
-                                 log.warn("AI 결과가 없음: imageId={}", history.getImageId());
+                                 log.warn("⚠️ AI 결과가 없음: imageId={}", history.getImageId());
+                                 // AI 결과가 없어도 기본값 설정
+                                 historyMap.put("wasteType", "NO_DATA");
                              }
+                             
+                             log.info("=== AI 분석 결과 조회 완료 ===");
                          } catch (Exception e) {
-                             log.error("AI 결과 조회 실패: imageId={}, error={}", history.getImageId(), e.getMessage(), e);
+                             log.error("❌ AI 결과 조회 실패: imageId={}, error={}", history.getImageId(), e.getMessage(), e);
+                             // 에러가 발생해도 기본값 설정
+                             historyMap.put("wasteType", "ERROR");
                          }
                      } else {
                          log.info("AI 분석 결과 추가 조건 불만족: type={}, imageId={}", history.getType(), history.getImageId());
