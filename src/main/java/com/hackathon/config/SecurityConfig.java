@@ -21,6 +21,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // HTTPS 강제는 SSL 인증서 설정 후 활성화
+            // .requiresChannel(channel -> channel
+            //     .anyRequest().requiresSecure())  // 모든 요청을 HTTPS로 강제
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -42,8 +45,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 모든 origin 허용
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        // 구체적인 도메인들을 명시적으로 허용
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:5172",
+            "https://team5-fe-seven.vercel.app"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization", 
@@ -53,7 +61,7 @@ public class SecurityConfig {
             "Origin"
         ));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setAllowCredentials(true);  // credentials를 true로 변경
+        configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L); // 1시간
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
