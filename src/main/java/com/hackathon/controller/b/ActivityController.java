@@ -9,6 +9,7 @@ import com.hackathon.entity.b.WeeklyActivity;
 import com.hackathon.repository.b.ActivityHistoryRepository;
 import com.hackathon.repository.b.DailyActivityRepository;
 import com.hackathon.repository.b.WeeklyActivityRepository;
+import com.hackathon.service.b.DailyActivityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -28,6 +29,7 @@ public class ActivityController {
     private final ActivityHistoryRepository activityHistoryRepository;
     private final DailyActivityRepository dailyActivityRepository;
     private final WeeklyActivityRepository weeklyActivityRepository;
+    private final DailyActivityService dailyActivityService;
     
     // ===== 활동 기록 =====
     
@@ -163,22 +165,20 @@ public class ActivityController {
             @PathVariable String date) {
         try {
             LocalDate activityDate = LocalDate.parse(date);
-            var dailyActivity = dailyActivityRepository.findByUserIdAndActivityDate(userId, activityDate);
             
-            if (dailyActivity.isPresent()) {
-                return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "data", convertToDailyDto(dailyActivity.get())
-                ));
-            } else {
-                return ResponseEntity.ok(Map.of(
-                    "success", false,
-                    "message", "해당 날짜의 일간 활동을 찾을 수 없습니다."
-                ));
-            }
+            // 포인트 히스토리 기반으로 일일 활동 통계 생성/조회
+            var dailyActivity = dailyActivityService.getDailyActivityStatsByUserIdAndDate(userId, activityDate);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", dailyActivity,
+                "message", "포인트 히스토리 기반 일일 활동 통계"
+            ));
+            
         } catch (Exception e) {
+            log.error("일일 활동 통계 조회 실패: userId={}, date={}, error={}", userId, date, e.getMessage());
             return ResponseEntity.badRequest()
-                .body(Map.of("error", e.getMessage()));
+                .body(Map.of("success", false, "error", e.getMessage()));
         }
     }
 

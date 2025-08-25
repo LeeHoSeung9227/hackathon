@@ -42,3 +42,11 @@ INSERT INTO products (name, description, price, points_required, stock_quantity,
 ('재활용 노트', '재활용 종이로 만든 노트', 8000.00, 50, 100, 'STATIONERY', '/images/products/notebook.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('친환경 펜', '재활용 플라스틱 펜', 5000.00, 30, 200, 'STATIONERY', '/images/products/pen.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
 ('에코 화분', '재활용 소재 화분', 35000.00, 300, 20, 'LIFESTYLE', '/images/products/plantpot.jpg', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- 7번 사용자 포인트 히스토리 테스트 데이터 (날짜 다르게)
+INSERT INTO point_history (user_id, type, points, description, image_id, created_at, updated_at) VALUES
+(7, 'AI_ANALYSIS', 10, 'PLASTIC 분리수거로 10점 획득 (음료가 남아있지 않음)', 3, '2024-12-01 10:30:00', '2024-12-01 10:30:00'),
+(7, 'AI_ANALYSIS', 10, 'PLASTIC 분리수거로 10점 획득 (음료가 남아있지 않음)', 3, '2024-12-02 14:20:00', '2024-12-02 14:20:00'),
+(7, 'AI_ANALYSIS', 10, 'PLASTIC 분리수거로 10점 획득 (음료가 남아있지 않음)', 3, '2024-12-03 09:15:00', '2024-12-03 09:15:00'),
+(7, 'AI_ANALYSIS', 10, 'PLASTIC 분리수거로 10점 획득 (음료가 남아있지 않음)', 3, '2024-12-04 16:45:00', '2024-12-04 16:45:00'),
+(7, 'AI_ANALYSIS', 10, 'PLASTIC 분리수거로 10점 획득 (음료가 남아있지 않음)', 3, '2024-12-05 11:30:00', '2024-12-05 11:30:00');
