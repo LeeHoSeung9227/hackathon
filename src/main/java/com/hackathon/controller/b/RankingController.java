@@ -2,8 +2,7 @@ package com.hackathon.controller.b;
 
 import com.hackathon.service.b.RankingService;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,15 +11,11 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/rankings")
+@RequiredArgsConstructor
+@Slf4j
 public class RankingController {
 
-    private static final Logger log = LoggerFactory.getLogger(RankingController.class);
-    
     private final RankingService rankingService;
-    
-    public RankingController(RankingService rankingService) {
-        this.rankingService = rankingService;
-    }
 
     /** 개인 랭킹 Top 30/100 (TOTAL 고정) */
     @GetMapping("/individual/top")
