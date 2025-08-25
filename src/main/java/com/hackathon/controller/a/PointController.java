@@ -4,8 +4,10 @@ import com.hackathon.dto.a.PointHistoryDto;
 import com.hackathon.dto.a.UserDto;
 import com.hackathon.entity.a.PointHistory;
 import com.hackathon.entity.a.Image;
+import com.hackathon.entity.a.AiResult;
 import com.hackathon.repository.a.PointHistoryRepository;
 import com.hackathon.repository.a.ImageRepository;
+import com.hackathon.repository.a.AiResultRepository;
 import com.hackathon.service.a.PointHistoryService;
 import com.hackathon.service.a.UserService;
 import com.hackathon.service.b.ProductService;
@@ -32,6 +34,7 @@ public class PointController {
     private final ProductService productService;
     private final PointHistoryRepository pointHistoryRepository;
     private final ImageRepository imageRepository;
+    private final AiResultRepository aiResultRepository;
     
     // ===== Point Add/Subtract =====
     
@@ -206,7 +209,21 @@ public class PointController {
                     historyMap.put("createdAt", history.getCreatedAt());
                     historyMap.put("updatedAt", history.getUpdatedAt());
                     
-                                         // 이미지 정보가 있는 경우 추가
+                    // AI 분석 결과 정보 추가 (AI_ANALYSIS 타입인 경우)
+                    if ("AI_ANALYSIS".equals(history.getType()) && history.getImageId() != null) {
+                        try {
+                            // AI 결과에서 재질 정보 가져오기
+                            List<AiResult> aiResults = aiResultRepository.findByImageIdOrderByCreatedAtDesc(history.getImageId());
+                            if (!aiResults.isEmpty()) {
+                                AiResult aiResult = aiResults.get(0); // 가장 최근 결과
+                                historyMap.put("wasteType", aiResult.getWasteType());  // ✅ AI 분석 결과 추가
+                            }
+                        } catch (Exception e) {
+                            log.warn("AI 결과 조회 실패: {}", e.getMessage());
+                        }
+                    }
+                    
+                    // 이미지 정보가 있는 경우 추가
                     if (history.getImageId() != null) {
                         try {
                             var image = imageRepository.findById(history.getImageId());
@@ -227,6 +244,18 @@ public class PointController {
                     
                     result.add(historyMap);
                 }
+                
+                // 총 누적 포인트 계산
+                int totalPoints = histories.stream()
+                    .mapToInt(history -> history.getPoints())
+                    .sum();
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("totalPoint", totalPoints);      // 총 누적 포인트
+                response.put("history", result);
+                
+                return ResponseEntity.ok(response);
+                
             } else {
                 // 특정 타입의 포인트 히스토리 조회
                 List<PointHistory> histories = pointHistoryRepository.findByUserIdAndTypeOrderByCreatedAtDesc(userId, changeType);
